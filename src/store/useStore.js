@@ -6,7 +6,7 @@ import { io } from 'socket.io-client'
 
 // Socket.io Connection
 const socket = io(import.meta.env.PROD 
-  ? 'https://your-streamx-backend.onrender.com' // <--- PUT YOUR BACKEND URL HERE (No /api)
+  ? 'https://steam-x.onrender.com' // <--- PUT YOUR BACKEND URL HERE (No /api)
   : 'http://localhost:5000', 
   {
     autoConnect: true,
