@@ -1,11 +1,11 @@
 // Dynamic API URL for both Dev and Production
 const API_URL = import.meta.env.PROD 
-  ? 'https://your-streamx-backend.onrender.com/api' // <--- PUT YOUR BACKEND URL HERE
-  : 'http://localhost:5000/api'
+  ? 'https://steam-x.onrender.com'
+  : 'http://localhost:5000'
 
 export const authAPI = {
   login: async (email, password) => {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -16,7 +16,7 @@ export const authAPI = {
   },
   
   register: async (name, email, password) => {
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
@@ -27,7 +27,7 @@ export const authAPI = {
   },
   
   getProfile: async (token) => {
-    const res = await fetch(`${API_URL}/auth/me`, {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
        headers: { 
            'Authorization': `Bearer ${token}` 
        }
@@ -38,7 +38,7 @@ export const authAPI = {
   },
 
   updateProfile: async (token, userData) => {
-    const res = await fetch(`${API_URL}/auth/profile`, {
+    const res = await fetch(`${API_URL}/api/auth/profile`, {
       method: 'PUT',
       headers: { 
           'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ export const movieAPI = {
       if (genre) params.append('genre', genre)
       if (sort !== 'trending') params.append('sort', sort)
       
-      const response = await fetch(`${API_URL}/movies?${params}`)
+      const response = await fetch(`${API_URL}/api/movies?${params}`)
       return await response.json()
     } catch (error) {
       console.error('Error fetching movies:', error)
@@ -70,7 +70,7 @@ export const movieAPI = {
 
   getById: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/movies/${id}`)
+      const response = await fetch(`${API_URL}/api/movies/${id}`)
       return await response.json()
     } catch (error) {
       console.error('Error fetching movie:', error)
@@ -80,7 +80,7 @@ export const movieAPI = {
 
   getTrending: async () => {
     try {
-      const response = await fetch(`${API_URL}/movies/trending/all`)
+      const response = await fetch(`${API_URL}/api/movies/trending/all`)
       return await response.json()
     } catch (error) {
       console.error('Error fetching trending:', error)
