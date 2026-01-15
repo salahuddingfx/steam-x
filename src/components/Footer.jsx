@@ -50,7 +50,7 @@ export default function Footer() {
 
   return (
     <footer 
-      className="fixed bottom-0 left-0 right-0 w-full bg-dark-bg/90 border-t border-neon-blue/20 backdrop-blur-sm z-30 transition-opacity duration-300"
+      className="fixed bottom-0 left-0 right-0 w-full bg-dark-bg/90 border-t border-neon-blue/20 backdrop-blur-sm z-40 transition-opacity duration-300"
       style={{ opacity: opacity }}
     >
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -69,7 +69,7 @@ export default function Footer() {
             <span className="text-gray-400 text-xs">Developed by </span>
             <span className="text-neon-purple font-bold">{`Salah Uddin Kader`}</span>
             <span className="text-gray-400 text-xs ml-2">• </span>
-            <span className="text-green-400 text-xs ml-2 flex items-center gap-1 inline-flex">
+            <span className="text-green-400 text-xs ml-2 inline-flex items-center gap-1">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               {onlineUsers || 1} Online
             </span>

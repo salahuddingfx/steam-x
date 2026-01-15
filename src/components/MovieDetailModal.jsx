@@ -61,8 +61,8 @@ export default function MovieDetailModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end md:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm animate-fade-in">
-      <div className="glass-effect w-full md:w-2xl max-h-screen md:max-h-[85vh] md:rounded-2xl overflow-y-auto overflow-x-hidden animate-slide-up no-scrollbar">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-dark-bg/95 backdrop-blur-xl border border-white/10 w-full md:w-2xl max-h-screen md:max-h-[85vh] md:rounded-2xl overflow-y-auto overflow-x-hidden animate-slide-up no-scrollbar shadow-2xl">
         {/* Header with Close */}
         <div className="relative h-64 md:h-80 w-full">
           <img

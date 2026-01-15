@@ -52,17 +52,21 @@ export default function PlayerModal() {
   }
 
   // Helper to determine if we are in "Iframe Mode" (Streaming from Server)
-  const isExternalStream = tmdbId && !isNaN(tmdbId) && selectedMovie?.provider !== 'StreamX';
+  // FIX: Assuming ALL streams are currently iframes and need native controls
+  const isExternalStream = true; 
 
   useEffect(() => {
     if (!isPlaying) return
 
     const interval = setInterval(() => {
       setPlayerTime((prev) => {
-        if (prev >= duration) {
+        // Only auto-stop if we control the player (NOT external stream)
+        if (!isExternalStream && prev >= duration) {
           setIsPlaying(false)
           return duration
         }
+        // If external stream, just update time but don't force stop
+        // (Note: This time will be inaccurate if user pauses the iframe video)
         return prev + 1
       })
     }, 1000)
@@ -138,33 +142,30 @@ export default function PlayerModal() {
                 {/* Pointer events AUTO is essential for clicking buttons */}
                 <div className={`absolute top-20 right-4 flex flex-col gap-2 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'} z-50 pointer-events-auto`}>
                     <div className="bg-black/90 backdrop-blur-md p-3 rounded-xl border border-gray-800 shadow-2xl">
-                        <p className="text-[10px] text-gray-400 mb-2 font-bold uppercase tracking-wider text-center">Video Server (Switch if broken)</p>
+                        <p className="text-[10px] text-gray-400 mb-2 font-bold uppercase tracking-wider text-center">Video Server (Switch if buffering)</p>
                         <div className="flex flex-col gap-1.5 min-w-[150px]">
-                            {/*
-                                {id: 'server1', name: 'Server 1 (VidSrc)'},
-                                {id: 'server2', name: 'Server 2 (VidSrc VIP)'}, 
-                                {id: 'server4', name: 'Server 3 (AutoEmbed)'}, 
-                                {id: 'server5', name: 'Server 4 (SuperStream)'},
-                                {id: 'server3', name: 'Server 5 (Backup)'},
+                            {[
+                                {id: 'server2', name: 'Server 1 (VidSrc Pro)'}, 
+                                {id: 'server4', name: 'Server 2 (AutoEmbed Fast)'}, 
+                                {id: 'server1', name: 'Server 3 (VidSrc Backup)'},
+                                {id: 'server5', name: 'Server 4 (Alternative)'},
                             ].map((srv) => (
-                            */}
                                 <button
-                                    key={'server2'}
+                                    key={srv.id}
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
                                         setIsBuffering(true); 
-                                        setServer('server2'); 
+                                        setServer(srv.id); 
                                     }}
                                     className={`text-xs px-3 py-3 md:py-2 rounded-lg text-left transition-all font-medium border ${
-                                        server === 'server2' 
+                                        server === srv.id 
                                         ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
                                         : 'bg-white/5 border-transparent hover:bg-white/10 text-gray-300'
                                     }`}
                                 >
-                                    Server 2 (VidSrc VIP)
+                                    {srv.name}
                                 </button>
-                            {/*
-                            */}
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -311,9 +312,9 @@ export default function PlayerModal() {
 
       </div>
 
-      {/* Streaming Options - Below Player */}
-      {selectedMovie.streamingOptions && selectedMovie.streamingOptions.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-md border-t border-gray-700">
+      {/* Streaming Options - Only Show when NOT playing or paused explicitly? Actually just hide during playback to avoid blocking controls */}
+      {!isPlaying && selectedMovie.streamingOptions && selectedMovie.streamingOptions.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-md border-t border-gray-700 z-50">
           <h3 className="text-sm font-bold text-white mb-2">Available On:</h3>
           <div className="flex flex-wrap gap-2">
             {selectedMovie.streamingOptions.map((option, i) => (

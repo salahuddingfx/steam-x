@@ -87,14 +87,21 @@ router.get('/trending/all', async (req, res) => {
 // 🔥 Route 4: Get Movie Details + Streaming Options (NEW)
 router.get('/:id', async (req, res) => {
   try {
-    let movie = await Movie.findById(req.params.id)
+    let movie;
+    
+    // Check if valid Mongo ID first to avoid CastError
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+        movie = await Movie.findById(req.params.id);
+    }
+
+    // If not found by ID or invalid ID, try TMDB ID
     if (!movie) {
-         movie = await Movie.findOne({ tmdbId: req.params.id })
+         movie = await Movie.findOne({ tmdbId: req.params.id });
     }
     
-    if (!movie) return res.status(404).json({ error: 'Movie not found' })
+    if (!movie) return res.status(404).json({ error: 'Movie not found' });
 
-    const responseData = movie.toObject()
+    const responseData = movie.toObject();
 
     // Set default vidsrc link
     responseData.videoUrl = responseData.videoUrl || 
