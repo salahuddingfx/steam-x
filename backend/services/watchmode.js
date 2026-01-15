@@ -1,79 +1,79 @@
-import axios from 'axios';
+import axios from 'axios'
 
-const WATCHMODE_API_KEY = process.env.WATCHMODE_KEY; 
-const BASE_URL = 'https://api.watchmode.com/v1';
+const WATCHMODE_API_KEY = process.env.WATCHMODE_API_KEY;
+const WATCHMODE_BASE_URL = 'https://api.watchmode.com/v1';
 
-// ✅ Cache to save API credits & speed up loading (Zero Latency)
-const watchmodeCache = new Map();
+// Helper to get API key at runtime
+const getWatchmodeKey = () => {
+    const key = process.env.WATCHMODE_API_KEY;
+    if (!key) {
+        console.warn('⚠️ WATCHMODE_API_KEY is missing. Watchmode features disabled.');
+    }
+    return key;
+}
 
-export const getWatchLinks = async (tmdbId) => {
-  // Check if API Key exists
-  if (!tmdbId || !WATCHMODE_API_KEY) {
-      if (!WATCHMODE_API_KEY) console.warn("⚠️ Watchmode API Key missing");
-      return null;
-  }
+// Get streaming links for a movie
+export const getWatchLinks = async (tmdbId, movieTitle) => {
+    try {
+        const apiKey = getWatchmodeKey();
+        if (!apiKey) return { success: false, providers: [] };
 
-  // 1️⃣ Check Cache First
-  if (watchmodeCache.has(tmdbId)) {
-      console.log(`🚀 Watchmode Cache Hit for TMDB ID: ${tmdbId}`);
-      return watchmodeCache.get(tmdbId);
-  }
+        // Step 1: Get Watchmode ID from TMDB ID
+        const searchUrl = `${WATCHMODE_BASE_URL}/search/?query=${encodeURIComponent(movieTitle)}&apiKey=${apiKey}`;
+        const searchRes = await axios.get(searchUrl);
 
-  try {
-    // ---------------------------------------------------------
-    // STEP 1: Get Watchmode ID using TMDB ID
-    // ---------------------------------------------------------
-    const searchUrl = `${BASE_URL}/search/?apiKey=${WATCHMODE_API_KEY}&search_field=tmdb_movie_id&search_value=${tmdbId}`;
-    const searchRes = await axios.get(searchUrl);
-    
-    // Check if we found the movie
-    const searchResults = searchRes.data?.title_results || [];
-    if (searchResults.length === 0) return [];
-    
-    const watchmodeId = searchResults[0].id; // Get the internal ID
-
-    // ---------------------------------------------------------
-    // STEP 2: Get Streaming Sources using Watchmode ID
-    // ---------------------------------------------------------
-    const sourceUrl = `${BASE_URL}/title/${watchmodeId}/sources/?apiKey=${WATCHMODE_API_KEY}&regions=US`;
-    const sourceRes = await axios.get(sourceUrl);
-    const sources = sourceRes.data;
-
-    // Filter for major platforms
-    const majorPlatforms = ['Netflix', 'Amazon Prime', 'Disney+', 'Hulu', 'HBO Max', 'Apple TV', 'Peacock'];
-    
-    const links = sources
-        .filter(s => majorPlatforms.some(p => s.name.includes(p)) || s.type === 'sub')
-        .map(s => ({
-            name: s.name,
-            url: s.web_url,
-            price: s.price || null,
-            type: s.type, // 'sub', 'rent', 'buy'
-            quality: s.format // 'HD', '4K'
-        }));
-        
-    // Remove duplicates
-    const uniqueLinks = [];
-    const map = new Map();
-    for (const item of links) {
-        if(!map.has(item.name)) {
-            map.set(item.name, true);
-            uniqueLinks.push(item);
+        if (!searchRes.data.results || searchRes.data.results.length === 0) {
+            return { success: false, providers: [] };
         }
+
+        const watchmodeId = searchRes.data.results[0].id;
+
+        // Step 2: Get Streaming Details
+        const detailsUrl = `${WATCHMODE_BASE_URL}/title/${watchmodeId}/streaming/?apiKey=${apiKey}&regions=US`;
+        const detailsRes = await axios.get(detailsUrl);
+
+        if (!detailsRes.data.streaming_options) {
+            return { success: false, providers: [] };
+        }
+
+        // Parse and format streaming options
+        const providers = detailsRes.data.streaming_options.map((option) => ({
+            name: option.source_name,
+            type: option.type, // subscription, buy, rent
+            region: 'US',
+            logoUrl: option.logo_url,
+        }));
+
+        console.log(`✅ Watchmode: Found ${providers.length} streaming options for "${movieTitle}"`);
+
+        return {
+            success: true,
+            providers: providers,
+            tmdbId: tmdbId,
+            watchmodeId: watchmodeId,
+        };
+    } catch (error) {
+        console.error('Watchmode Error:', error.message);
+        return { success: false, providers: [] };
     }
+}
 
-    // ✅ Save to Cache (Expires in 1 Hour)
-    watchmodeCache.set(tmdbId, uniqueLinks);
-    setTimeout(() => watchmodeCache.delete(tmdbId), 3600000);
+// Get multiple titles' availability
+export const checkAvailability = async (movieTitles) => {
+    try {
+        const apiKey = getWatchmodeKey();
+        if (!apiKey) return {};
 
-    return uniqueLinks;
+        const results = {};
 
-  } catch (error) {
-    // Handle 404 quietly
-    if (error.response && error.response.status === 404) {
-         return [];
+        for (const title of movieTitles) {
+            const links = await getWatchLinks(null, title);
+            results[title] = links;
+        }
+
+        return results;
+    } catch (error) {
+        console.error('Availability Check Error:', error.message);
+        return {};
     }
-    console.error('Watchmode API Error:', error.message);
-    return [];
-  }
-};
+}

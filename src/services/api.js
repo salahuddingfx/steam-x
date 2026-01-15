@@ -53,12 +53,14 @@ export const authAPI = {
 }
 
 export const movieAPI = {
-  getAll: async (search = '', genre = '', sort = 'trending') => {
+  getAll: async (search = '', genre = '', sort = 'trending', page = 1, limit = 100) => {
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
       if (genre) params.append('genre', genre)
       if (sort !== 'trending') params.append('sort', sort)
+      params.append('page', page)
+      params.append('limit', limit)
       
       const response = await fetch(`${API_URL}/api/movies?${params}`)
       return await response.json()

@@ -18,6 +18,7 @@ const movieSchema = new mongoose.Schema({
   isTrending: { type: Boolean, default: false },
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
+  type: { type: String, default: 'movie' }, // Added type
   createdAt: { type: Date, default: Date.now }
 })
 

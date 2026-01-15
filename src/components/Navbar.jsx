@@ -16,7 +16,7 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="fixed top-0 left-0 right-0 z-40 glass-effect-dark border-b border-neon-blue border-opacity-20">
+    <nav className="sticky top-0 left-0 right-0 bg-gradient-to-b from-dark-bg to-dark-bg/80 backdrop-blur-md border-b border-neon-blue/20 z-40 shadow-lg shadow-black/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

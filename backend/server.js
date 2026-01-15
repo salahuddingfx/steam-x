@@ -42,20 +42,14 @@ app.use(express.json())
 
 // MongoDB Connection
 connectDB()
-// console.log("⚠️ MongoDB Disconnected: Running in Live Stream Mode")
-
-import { startContentUpdater } from './jobs/updater.js'
-import { fetchTrendingData } from './services/tmdb.js'
-
-// Initial Data Fetch & Cron Jobs
-startContentUpdater()
-// Fetch data on startup (non-blocking)
-fetchTrendingData().catch(err => console.log('Startup fetch skipped/failed'))
 
 // Routes - Updated naming convention
 import movieRoutes from './routes/movie.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import proxyRoutes from './routes/proxy.routes.js'
+// Import jobs/services but don't run them yet
+import { startContentUpdater } from './jobs/updater.js'
+import { fetchTrendingData } from './services/tmdb.js'
 
 app.use('/api/movies', movieRoutes)
 app.use('/api/auth', authRoutes)
@@ -64,13 +58,6 @@ app.use('/api/proxy', proxyRoutes)
 // Error Handler
 app.use(errorHandler)
 
-// Start Cron Jobs
-startContentUpdater()
-
-// Init fetch on start (non-blocking)
-fetchTrendingData().catch(err => console.log('Init fetch skipped:', err.message))
-
-// Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'StreamX Backend API Running ✅' })
 })
@@ -124,6 +111,20 @@ httpServer.listen(PORT, async () => {
 
       await typewriter(gradient.passion(`👨‍💻 Developer: Salahuddin | Project: Stream-X Pro`))
       console.log(chalk.gray('---------------------------------------------------'))
+      
+      // 🔥 Trigger Auto-Update on Start
+      console.log(chalk.yellow('⬇ Triggering Initial Content Update (2024-2026 + Anime)...'));
+      
+      // Start Scheduler
+      startContentUpdater(); 
+      
+      // Run Immediate Fetch
+      fetchTrendingData().then(() => {
+          console.log(chalk.green('✅ Initial Content Hydration Complete'));
+      }).catch(err => {
+          console.log(chalk.red('❌ Initial Content Fetch Failed:', err.message));
+      });
+
       console.log(chalk.gray(`Waiting for incoming requests...`))
   })
 })
