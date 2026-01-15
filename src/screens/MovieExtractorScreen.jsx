@@ -1,273 +1,194 @@
 import React, { useState } from 'react'
 import axios from 'axios'
-import { FiRefreshCw, FiArrowLeft, FiDownload, FiCheckCircle, FiAlertCircle, FiSettings, FiPlay, FiCloud } from 'react-icons/fi'
+import { FiRefreshCw, FiArrowLeft, FiDownload, FiCheckCircle, FiAlertCircle, FiSettings, FiLink, FiPlay } from 'react-icons/fi'
 import { useStore } from '../store/useStore'
 
 export default function MovieExtractorScreen() {
   const { setCurrentScreen } = useStore()
-  
-  // Tabs: 'extractor' | 'cloud'
-  const [activeTab, setActiveTab] = useState('extractor')
-  const [streamUrl, setStreamUrl] = useState('')
-  const [finalStreamLink, setFinalStreamLink] = useState('')
+  const [activeTab, setActiveTab] = useState('db') // 'db' or 'resolver'
 
-  // Extractor State
+  // DB Extractor State
   const [extracting, setExtracting] = useState(false)
   const [extractedCount, setExtractedCount] = useState(0)
   const [extractLog, setExtractLog] = useState([])
   const [sourceSelected, setSourceSelected] = useState('tmdb')
 
-  const sources = [
-    {
-      id: 'imdb',
-      name: 'IMDb Top',
-      emoji: '⭐',
-      status: 'connected',
-      movies: 1250,
-      color: 'text-yellow-400'
-    },
-    {
-      id: 'tmdb',
-      name: 'TMDB Popular',
-      emoji: '🔥',
-      status: 'connected',
-      movies: 2180,
-      color: 'text-blue-400'
-    },
-    {
-      id: 'netflix',
-      name: 'Netflix',
-      emoji: '📺',
-      status: 'connected',
-      movies: 890,
-      color: 'text-red-400'
-    },
-    {
-      id: 'amazon',
-      name: 'Amazon Prime',
-      emoji: '📦',
-      status: 'ready',
-      movies: 540,
-      color: 'text-cyan-400'
-    },
-  ]
-
-  const handleCloudStream = () => {
-    if(!streamUrl) return alert("Please enter a valid link!");
-    
-    const API_URL = import.meta.env.PROD 
-        ? 'https://steam-x.onrender.com/api' 
-        : 'http://localhost:5000/api';
-
-    // Generates a proxy link that the browser can stream directly
-    const proxyLink = `${API_URL}/proxy/stream?url=${encodeURIComponent(streamUrl)}`;
-    setFinalStreamLink(proxyLink);
-  }
+  // Resolver State
+  const [resolveUrl, setResolveUrl] = useState('')
+  const [resolvedLink, setResolvedLink] = useState(null)
+  const [resolving, setResolving] = useState(false)
 
   const handleExtract = async () => {
     setExtracting(true)
     setExtractLog([])
     
     try {
-      // Step 1: Connection Log
       setExtractLog(prev => [...prev, { step: `Connecting to ${sourceSelected.toUpperCase()} API...`, status: 'processing' }])
-      
-      // Artificial delay for UX (to show the connecting state)
       await new Promise(r => setTimeout(r, 800))
 
-      // Step 2: Sending Request
-      setExtractLog(prev => [
-        ...prev.slice(0, -1),
-        { step: `Connected to ${sourceSelected.toUpperCase()}`, status: 'completed' },
-        { step: 'Fetching metadata & posters...', status: 'processing' }
-      ])
-
-      // 🚀 REAL API CALL
       const API_URL = import.meta.env.PROD 
         ? 'https://steam-x.onrender.com/api' 
         : 'http://localhost:5000/api';
 
       const response = await axios.post(`${API_URL}/movies/extract`, {
         source: sourceSelected,
-        limit: 20 // Can be dynamic based on input
+        limit: 20
       })
 
-      const { count, message, source } = response.data
-
-      // Step 3: Success Logs
-      setExtractLog(prev => [
-        ...prev.slice(0, -1), // Remove 'processing'
-        { step: 'Metadata parsing & validation', status: 'completed' },
-        { step: `Generating stream links for ${count} items`, status: 'completed' },
-        { step: `Success! ${count} new movies added from ${source}`, status: 'success' }
-      ])
-
-      setExtractedCount(prev => prev + count)
-      setLastExtracted(new Date().toLocaleDateString())
-
-    } catch (error) {
-      console.error(error)
+      const { count } = response.data
+      
       setExtractLog(prev => [
         ...prev,
-        { step: `Error: ${error.response?.data?.error || error.message}`, status: 'error' }
+        { step: `Successfully extracted ${count} movies`, status: 'completed' }
       ])
+      setExtractedCount(prev => prev + count)
+    } catch (err) {
+      setExtractLog(prev => [...prev, { step: 'Extraction Failed', status: 'error' }])
     } finally {
       setExtracting(false)
     }
   }
 
+  const handleResolve = () => {
+      if (!resolveUrl) return;
+      setResolving(true);
+      
+      // Simulate resolving time or backend check if needed
+      setTimeout(() => {
+          const API_URL = import.meta.env.PROD 
+            ? 'https://steam-x.onrender.com/api' 
+            : 'http://localhost:5000/api';
+            
+          // Construct the proxy stream URL
+          const streamUrl = `${API_URL}/proxy/stream?url=${encodeURIComponent(resolveUrl)}`;
+          setResolvedLink(streamUrl);
+          setResolving(false);
+      }, 1500);
+  }
+
   return (
-    <div className="min-h-screen">
-      <button
-        onClick={() => setCurrentScreen('developer')}
-        className="fixed top-24 left-4 z-40 flex items-center gap-2 text-neon-blue hover:gap-4 transition-all"
-      >
-        <FiArrowLeft /> Back
-      </button>
-
-      <div className="max-w-6xl mx-auto p-4 pt-20">
+    <div className="pt-24 px-4 md:px-12 pb-12 min-h-screen bg-dark-bg text-white animate-fade-in">
+      <div className="max-w-4xl mx-auto">
+        
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple">
-            🎬 Movie Extractor
-          </h1>
-          <p className="text-gray-400 text-lg">
-            Automatically extract and manage movies from multiple sources
-          </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-          {[
-            { label: 'Total Movies', value: extractedCount + 1523, icon: '🎥' },
-            { label: 'Last Extracted', value: lastExtracted, icon: '📅' },
-            { label: 'Active Sources', value: 'TMDB + Archive', icon: '🔗' },
-            { label: 'System Status', value: 'Online', icon: '✅' },
-          ].map((stat, idx) => (
-            <div key={idx} className="glass-effect p-6 rounded-xl hover-glow transition-all">
-              <div className="text-3xl mb-2">{stat.icon}</div>
-              <p className="text-gray-400 text-sm">{stat.label}</p>
-              <p className="text-2xl font-bold text-neon-blue">{stat.value}</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setCurrentScreen('settings')}
+              className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-all group"
+            >
+              <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                Tools & Utilities
+              </h1>
+              <p className="text-gray-400 text-sm">Advanced system controls</p>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Sources Grid */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-neon-blue">Select Data Source</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {sources.map((source) => (
-              <div
-                key={source.id}
-                onClick={() => setSourceSelected(source.id)}
-                className={`glass-effect p-6 rounded-xl cursor-pointer transition-all ${
-                  sourceSelected === source.id ? 'ring-2 ring-neon-blue hover-glow' : 'hover:bg-opacity-60'
-                }`}
-              >
-                <div className="text-5xl mb-4">{source.emoji}</div>
-                <h3 className="font-bold text-lg mb-2 text-neon-blue">{source.name}</h3>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={`w-2 h-2 rounded-full ${source.status === 'connected' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                  <span className="text-xs text-gray-400 capitalize">{source.status}</span>
+        {/* Tabs */}
+        <div className="flex gap-4 mb-8 border-b border-gray-800">
+            <button 
+                onClick={() => setActiveTab('db')}
+                className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'db' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+            >
+                <FiRefreshCw className="inline mr-2" /> Content Extractor
+            </button>
+            <button 
+                onClick={() => setActiveTab('resolver')}
+                className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'resolver' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+            >
+                <FiLink className="inline mr-2" /> Cloud Link Resolver
+            </button>
+        </div>
+
+        {/* Content Area */}
+        {activeTab === 'db' ? (
+            <div className="bg-[#16161a] border border-white/5 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+                <h2 className="text-xl font-bold mb-4">Database Population</h2>
+                <div className="flex gap-2 mb-6">
+                    <select 
+                        className="bg-black/30 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:border-blue-500 outline-none"
+                        value={sourceSelected}
+                        onChange={(e) => setSourceSelected(e.target.value)}
+                    >
+                        <option value="tmdb">TMDB (Popular)</option>
+                        <option value="netflix">Netflix</option>
+                    </select>
+                    <button 
+                        onClick={handleExtract}
+                        disabled={extracting}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {extracting ? 'Extracting...' : 'Start Extraction'}
+                    </button>
                 </div>
-                <p className="text-sm text-gray-300">{source.movies}+ available</p>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Extraction Control */}
-        <div className="glass-effect p-8 rounded-xl mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-neon-purple flex items-center gap-3">
-            <FiSettings /> Extraction Settings
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <label className="block text-neon-blue font-semibold mb-2">Target Source</label>
-              <select
-                value={sourceSelected}
-                onChange={(e) => setSourceSelected(e.target.value)}
-                className="w-full bg-dark-card border border-neon-blue border-opacity-30 rounded-lg p-3 text-gray-300 focus:outline-none focus:border-neon-blue"
-              >
-                {sources.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.emoji} {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-neon-blue font-semibold mb-2">Auto Update Interval</label>
-              <select className="w-full bg-dark-card border border-neon-blue border-opacity-30 rounded-lg p-3 text-gray-300 focus:outline-none focus:border-neon-blue">
-                <option>Every 6 hours</option>
-                <option>Every 12 hours</option>
-                <option>Every 24 hours</option>
-                <option>Manual only</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-neon-blue font-semibold mb-2">Batch Limit</label>
-              <input
-                type="number"
-                defaultValue="20"
-                className="w-full bg-dark-card border border-neon-blue border-opacity-30 rounded-lg p-3 text-gray-300 focus:outline-none focus:border-neon-blue"
-              />
-            </div>
-
-            <div>
-              <label className="block text-neon-blue font-semibold mb-2">Quality Threshold</label>
-              <select className="w-full bg-dark-card border border-neon-blue border-opacity-30 rounded-lg p-3 text-gray-300 focus:outline-none focus:border-neon-blue">
-                <option>All Qualities</option>
-                <option>1080p Only</option>
-                <option>4K Only</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Extract Button */}
-          <button
-            onClick={handleExtract}
-            disabled={extracting}
-            className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white font-bold rounded-lg disabled:opacity-50 transition-all hover:shadow-glow-intense"
-          >
-            <FiDownload size={20} />
-            {extracting ? 'Extracting Data...' : 'Start Cloud Extraction'}
-          </button>
-        </div>
-
-        {/* Extraction Progress Log */}
-        {extractLog.length > 0 && (
-          <div className="glass-effect p-8 rounded-xl mb-12">
-            <h2 className="text-2xl font-bold mb-6 text-neon-blue">Live Terminal</h2>
-            <div className="space-y-3 max-h-96 overflow-y-auto font-mono text-sm">
-              {extractLog.map((log, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-center gap-4 p-4 rounded-lg border-l-4 ${
-                    log.status === 'completed'
-                      ? 'bg-green-500 bg-opacity-10 border-green-500'
-                      : log.status === 'success'
-                      ? 'bg-blue-500 bg-opacity-10 border-blue-500'
-                      : log.status === 'error'
-                      ? 'bg-red-500 bg-opacity-10 border-red-500'
-                      : 'bg-yellow-500 bg-opacity-10 border-yellow-500 loading-pulse'
-                  }`}
-                >
-                  {log.status === 'completed' || log.status === 'success' ? (
-                    <FiCheckCircle className="text-green-400 flex-shrink-0" size={20} />
-                  ) : log.status === 'error' ? (
-                    <FiAlertCircle className="text-red-400 flex-shrink-0" size={20} />
-                  ) : (
-                    <FiRefreshCw className="text-yellow-400 flex-shrink-0 animate-spin" size={20} />
-                  )}
-                  <span className="text-gray-300">{log.step}</span>
+                 <div className="space-y-2 font-mono text-xs bg-black/50 p-4 rounded-xl h-48 overflow-y-auto w-full">
+                    {extractLog.length === 0 ? <span className="text-gray-600">Waiting for command...</span> : 
+                    extractLog.map((log, i) => (
+                        <div key={i} className={`flex items-center gap-2 ${log.status === 'error' ? 'text-red-400' : 'text-green-400'}`}>
+                            <span>{log.status === 'processing' ? '⟳' : '✓'}</span>
+                            {log.step}
+                        </div>
+                    ))}
                 </div>
-              ))}
             </div>
-          </div>
+        ) : (
+            <div className="bg-[#16161a] border border-white/5 rounded-2xl p-6 md:p-8">
+                 <h2 className="text-xl font-bold mb-2">Universal Cloud Resolver</h2>
+                 <p className="text-gray-400 text-sm mb-6">Paste any direct video link (MP4, MKV) to bypass CORS and stream directly in the secure cloud player.</p>
+
+                 <div className="flex gap-2 mb-8">
+                     <div className="flex-1 relative">
+                         <FiLink className="absolute left-3 top-3.5 text-gray-500" />
+                         <input 
+                            type="text" 
+                            placeholder="https://example.com/movie.mp4"
+                            className="w-full bg-black/30 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-purple-500 outline-none transition-all placeholder-gray-600"
+                            value={resolveUrl}
+                            onChange={(e) => setResolveUrl(e.target.value)}
+                         />
+                     </div>
+                     <button 
+                        onClick={handleResolve}
+                        disabled={resolving || !resolveUrl}
+                        className="bg-purple-600 hover:bg-purple-500 text-white px-6 rounded-xl font-bold disabled:opacity-50 transition-all shadow-lg shadow-purple-900/20"
+                     >
+                        {resolving ? 'Resolving...' : 'Resolve'}
+                     </button>
+                 </div>
+
+                 {resolvedLink && (
+                     <div className="animate-fade-in">
+                         <div className="aspect-video bg-black rounded-xl overflow-hidden mb-4 border border-white/10 relative group">
+                             <video 
+                                src={resolvedLink} 
+                                controls 
+                                className="w-full h-full object-contain"
+                                autoPlay
+                             />
+                         </div>
+                         <div className="flex items-center justify-between bg-green-900/20 border border-green-900/50 p-4 rounded-xl">
+                             <div className="flex items-center gap-2">
+                                 <FiCheckCircle className="text-green-400" />
+                                 <span className="text-green-200 text-sm font-medium">Link Successfully Resolved</span>
+                             </div>
+                             <a 
+                                href={resolvedLink} 
+                                download 
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs bg-green-800 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                             >
+                                 <FiDownload /> Download Source
+                             </a>
+                         </div>
+                     </div>
+                 )}
+            </div>
         )}
       </div>
     </div>
