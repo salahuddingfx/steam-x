@@ -1,0 +1,33 @@
+{
+  "name": "streamx-backend",
+  "version": "1.0.0",
+  "description": "StreamX Backend API",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "aos": "^2.3.4",
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "boxen": "^8.0.1",
+    "chalk": "^5.6.2",
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "figlet": "^1.9.4",
+    "gradient-string": "^3.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^7.0.0",
+    "node-cron": "^4.2.1",
+    "ora": "^9.0.0",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
