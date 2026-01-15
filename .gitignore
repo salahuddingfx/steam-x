@@ -24,6 +24,6 @@ dist-ssr
 *.sw?
 
 # Documentation
-*.md
+# *.md
 
 .env
