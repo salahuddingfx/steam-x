@@ -41,9 +41,9 @@ export default function MovieSlider({ title, movies }) {
         ref={sliderRef}
         className="flex gap-4 overflow-x-hidden scroll-smooth pb-2"
       >
-        {movies.map((movie) => (
-          <div key={movie.id} className="flex-shrink-0 w-40 md:w-48">
-            <MovieCard movie={movie} />
+        {movies.map((movie, index) => (
+          <div key={movie._id || movie.tmdbId || index} className="flex-shrink-0 w-40 md:w-48">
+            <MovieCard movie={movie} index={index} />
           </div>
         ))}
       </div>

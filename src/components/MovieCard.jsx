@@ -44,7 +44,7 @@ export default function MovieCard({ movie, index }) {
   return (
     <div
       data-aos="fade-up"
-      data-aos-delay={index * 50} 
+      data-aos-delay={index * 50 || 0} 
       className="glow-card group relative overflow-hidden rounded-xl cursor-pointer transition-transform hover:-translate-y-2 duration-300 shadow-xl"
       onClick={() => {
         setSelectedMovie(movie)
@@ -55,9 +55,9 @@ export default function MovieCard({ movie, index }) {
       <div className="relative w-full aspect-[2/3] overflow-hidden rounded-xl">
 
         <img
-          src={movie.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}
+          src={movie.poster || 'https://placehold.co/500x750/222/FFF?text=No+Poster'}
           alt={movie.title}
-          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/500x750?text=Image+Unavailable'; }}
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/500x750/333/FFF?text=Image+Unavailable'; }}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>

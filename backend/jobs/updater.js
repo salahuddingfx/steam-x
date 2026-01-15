@@ -5,9 +5,9 @@ import { fetchTrendingData } from '../services/tmdb.js'
 export const startContentUpdater = () => {
   console.log('⏰ Auto-updater scheduled (Runs daily at midnight)')
   
-  // Schedule task to run at 00:00
-  cron.schedule('0 0 * * *', async () => {
-    console.log('⏰ Running daily content update...')
+  // Schedule task to run every 6 hours
+  cron.schedule('0 */6 * * *', async () => {
+    console.log('⏰ Running scheduled content update (Every 6h)...')
     await fetchTrendingData()
   })
 }

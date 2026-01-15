@@ -55,9 +55,11 @@ fetchTrendingData().catch(err => console.log('Startup fetch skipped/failed'))
 // Routes - Updated naming convention
 import movieRoutes from './routes/movie.routes.js'
 import authRoutes from './routes/auth.routes.js'
+import proxyRoutes from './routes/proxy.routes.js'
 
 app.use('/api/movies', movieRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/proxy', proxyRoutes)
 
 // Error Handler
 app.use(errorHandler)

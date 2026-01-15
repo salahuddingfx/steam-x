@@ -39,12 +39,12 @@ export default function PlayerModal() {
         : `movie/${tmdbId}`;
 
       switch(server) {
-          case 'server1': return type === 'movie' ? `https://autoembed.co/movie/tmdb/${tmdbId}` : `https://autoembed.co/tv/tmdb/${tmdbId}-1-1`; // Ultra HD (AutoEmbed - Very Stable)
-          case 'server2': return `https://vidsrc.vip/embed/${endpoint}`; // Reliable Backup
-          case 'server3': return `https://vidsrc.cc/v2/embed/${endpoint}`; // Alternate
-          case 'server4': return `https://vidsrc.pro/embed/${endpoint}`; // Original Pro (if working)
+          case 'server1': return `https://vidsrc.xyz/embed/${endpoint}`; // VidSrc.xyz (Most Reliable Free)
+          case 'server2': return `https://vidsrc.to/embed/${endpoint}`; // VidSrc.to (Premium Free)
+          case 'server3': return `https://2embed.cc/embed/${tmdbId}`; // 2Embed
+          case 'server4': return type === 'movie' ? `https://autoembed.co/movie/tmdb/${tmdbId}` : `https://autoembed.co/tv/tmdb/${tmdbId}-1-1`; 
           case 'server5': return `https://superembed.stream/embed/${endpoint}`; // SuperEmbed
-          default: return `https://autoembed.co/movie/tmdb/${tmdbId}`;
+          default: return `https://vidsrc.xyz/embed/${endpoint}`;
       }
   }
 

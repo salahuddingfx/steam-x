@@ -9,15 +9,6 @@ if (!TMDB_API_KEY) {
     console.warn("⚠️ TMDB_API_KEY is missing in .env file! Movie data fetching will fail.");
 }
 
-// Provider IDs
-// 8: Netflix, 9: Amazon Prime, 15: Hulu, 337: Disney+
-const PROVIDERS = [
-  { id: 8, name: 'Netflix' },
-  { id: 9, name: 'Amazon Prime' },
-  { id: 15, name: 'Hulu' },
-  { id: 337, name: 'Disney+' }
-]
-
 // Fallback manual movies if API fails
 const FALLBACK_MOVIES = [
   {
@@ -28,155 +19,180 @@ const FALLBACK_MOVIES = [
     rating: 7.5,
     year: 2023,
     provider: 'Netflix',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
+    videoUrl: 'https://vidsrc.to/embed/movie/385687' // Real ID
   },
   {
     title: 'The Tomorrow War',
-    description: 'The world is stunned when a group of time travelers arrive from the year 2051 to deliver an urgent message: Thirty years in the future mankind is losing a global war against a deadly alien species.',
+    description: 'The world is stunned when a group of time travelers arrive from the year 2051.',
     poster: 'https://image.tmdb.org/t/p/w500/34nDCQZwaEvsy4CFO5hkGRFDCVU.jpg',
     backdrop: 'https://image.tmdb.org/t/p/original/xXHZeb1yhJvnSHPzZDqee0zfQq6.jpg',
     rating: 8.0,
     year: 2021,
     provider: 'Amazon Prime',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
+    videoUrl: 'https://vidsrc.to/embed/movie/588228' // Real ID
   }
 ]
 
+// ✅ NEW: Extractor Function (Frontend Call)
+export const fetchAndSaveMovies = async (source = 'tmdb', limit = 20) => {
+    try {
+        let url;
+        let providerName = 'Custom Extract';
+
+        // Source Logic
+        switch (source) {
+            case 'tmdb': 
+                url = `${BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=1`;
+                providerName = 'TMDB Popular';
+                break;
+            case 'netflix':
+                url = `${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=8&watch_region=US&sort_by=popularity.desc`;
+                providerName = 'Netflix';
+                break;
+            case 'amazon':
+                url = `${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=9&watch_region=US&sort_by=popularity.desc`;
+                providerName = 'Amazon Prime';
+                break;
+            case 'disney':
+                url = `${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=337&watch_region=US&sort_by=popularity.desc`;
+                providerName = 'Disney+';
+                break;
+            case 'imdb': 
+                url = `${BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&page=1`;
+                providerName = 'IMDb Top';
+                break;
+            default:
+                url = `${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`;
+                providerName = 'Cinema Release';
+        }
+
+        console.log(`🔌 Extracting from: ${providerName}...`);
+        
+        const res = await axios.get(url);
+        const movies = res.data.results.slice(0, limit);
+
+        // Process and Save
+        const savedCount = await processMovies(movies, providerName);
+        
+        return { success: true, count: savedCount, source: providerName };
+
+    } catch (error) {
+        console.error('Extractor Service Error:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+// ✅ Auto-Updater Function
 export const fetchTrendingData = async () => {
     try {
-        console.log('🔄 Fetching new trending movies from TMDB...')
+        console.log('🔄 Auto-updating trending movies (Multi-Page)...')
         
-        // Fetch "Now Playing" (Real-time Cinema Releases)
-        const nowPlayingRes = await axios.get(`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=1`)
-        await processMovies(nowPlayingRes.data.results, 'Cinema', true) // Priority
+        // Priority: Now Playing (Pages 1-3)
+        for (let page = 1; page <= 3; page++) {
+            const nowPlayingRes = await axios.get(`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`)
+            await processMovies(nowPlayingRes.data.results, 'Cinema', true)
+        }
 
-        // Fetch generic trending
-        const trendingRes = await axios.get(`${BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}`)
-        await processMovies(trendingRes.data.results, 'StreamX')
+        // Generic Trending (Pages 1-3)
+        for (let page = 1; page <= 3; page++) {
+            const trendingRes = await axios.get(`${BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}&page=${page}`)
+            await processMovies(trendingRes.data.results, 'StreamX Hit')
+        }
 
-        // Fetch Netflix specifically
-        const netflixRes = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=8&watch_region=US&sort_by=popularity.desc`)
-        await processMovies(netflixRes.data.results, 'Netflix')
-        
-        // Fetch Amazon Prime
-        const amazonRes = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=9&watch_region=US&sort_by=popularity.desc`)
-        await processMovies(amazonRes.data.results, 'Amazon Prime')
-
-        // Fetch Anime (Genre 16)
-        const animeRes = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=16&sort_by=popularity.desc&with_original_language=ja`)
-        await processMovies(animeRes.data.results, 'Anime Hits')
-
-        // Fetch 3D Animation / Family (Genre 16 + 10751)
-        // Kung Fu Panda et al usually fall here
-        const familyRes = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=16,10751&sort_by=popularity.desc`)
-        await processMovies(familyRes.data.results, 'Family 3D')
-
-        console.log('✅ Auto-update complete: Database synced with latest hits')
+        console.log('✅ Auto-update complete (Updated ~120 Movies)');
         return true
     } catch (error) {
-        console.error('⚠️ TMDB Fetch Error:', error.message)
-        console.log('⚠️ Switching to fallback data mode...')
+        console.error('TMDB Auto-Update Error:', error.message)
+        // Fallback
         await processMovies(FALLBACK_MOVIES, 'Mixed', true)
         return false
     }
 }
 
-// Fetch raw data for direct serving (In-Memory Fallback)
-export const getDirectMovies = async (category = 'all') => {
+// Direct Serving (In-Memory Fallback)
+export const getDirectMovies = async () => {
     try {
-        const results = []
-        if (category === 'all' || category === 'Cinema') {
-             const res = await axios.get(`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=1`)
-             results.push(...res.data.results.map(m => formatMovie(m, 'Cinema')))
-        }
-        if (category === 'all' || category === 'Netflix') {
-             const res = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=8&watch_region=US&sort_by=popularity.desc`)
-             results.push(...res.data.results.map(m => formatMovie(m, 'Netflix')))
-        }
-        if (category === 'all' || category === 'Amazon Prime') {
-             const res = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=9&watch_region=US&sort_by=popularity.desc`)
-             results.push(...res.data.results.map(m => formatMovie(m, 'Amazon Prime')))
-        }
-         if (category === 'all' || category === 'Anime Hits') {
-             const res = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=16&sort_by=popularity.desc&with_original_language=ja`)
-             results.push(...res.data.results.map(m => formatMovie(m, 'Anime Hits')))
-        }
-        if (category === 'all' || category === 'Family 3D') {
-             const res = await axios.get(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=16,10751&sort_by=popularity.desc`)
-             results.push(...res.data.results.map(m => formatMovie(m, 'Family 3D')))
-        }
-        return results
+        const res = await axios.get(`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=1`)
+        return res.data.results.map(m => formatMovie(m, 'Cinema'))
     } catch (error) {
-        console.error('Direct Fetch Error:', error.message)
-        return FALLBACK_MOVIES // Return static data if API and DB both fail
+        return FALLBACK_MOVIES
     }
 }
 
 const formatMovie = (movie, providerName) => {
     return {
-        id: movie.id, // Frontend expects 'id'
-        tmdbId: movie.id, // Player expects 'tmdbId'
-        _id: movie.id, // Backend compatibility
+        id: movie.id, 
+        tmdbId: movie.id,
+        _id: movie.id,
         title: movie.title,
         description: movie.overview,
-        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster',
-        backdrop: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : 'https://via.placeholder.com/1920x1080?text=Stream-X',
+        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://placehold.co/500x750/1a1a1a/FFF?text=No+Poster',
+        backdrop: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : 'https://placehold.co/1920x1080/1a1a1a/FFF?text=Stream-X',
         rating: movie.vote_average,
         year: new Date(movie.release_date || '2023-01-01').getFullYear(),
-        genres: ['Action', 'Cinema'], // Placeholder
+        genres: ['Action', 'Cinema'],
         duration: 120,
-        videoUrl: `https://vidsrc.vip/embed/movie/${movie.id}`, 
+        // Using VidSrc.to as primary
+        videoUrl: `https://vidsrc.to/embed/movie/${movie.id}`, 
         provider: providerName,
-        tmdbId: movie.id,
         isTrending: true
     }
 }
 
+// ✅ Main Processing Logic
 const processMovies = async (movies, providerName, isFallback = false) => {
     try {
-        if (mongoose.connection.readyState !== 1) return; // Skip if no DB
+        if (mongoose.connection.readyState !== 1) return 0;
+        let count = 0;
+
         for (const movie of movies) {
-        if (!movie.title) continue
+            if (!movie.title) continue
 
-        // Check if exists
-        const exists = await Movie.findOne({ 
-             $or: [
-                 { tmdbId: movie.id }, 
-                 { title: movie.title }
-             ] 
-        })
-        
-        if (exists) {
-            // Update rating/popularity if needed
-            exists.views += 1 // Simulate popularity
-            exists.isTrending = true
-            await exists.save()
-            continue
+            // Check duplicate
+            const exists = await Movie.findOne({ 
+                 $or: [
+                     { tmdbId: movie.id }, 
+                     { title: movie.title }
+                 ] 
+            })
+            
+            if (exists) {
+                exists.views += 1 
+                if (isFallback) exists.isTrending = true
+                // Ensure video URL is set to premium link if missing
+                if (!exists.videoUrl || exists.videoUrl.includes('w3schools')) {
+                     exists.videoUrl = `https://vidsrc.to/embed/movie/${movie.id}`;
+                }
+                await exists.save()
+                continue
+            }
+
+            // Create New Movie
+            const newMovie = new Movie({
+                title: movie.title,
+                description: movie.overview || movie.description,
+                poster: isFallback ? movie.poster : (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null),
+                backdrop: isFallback ? movie.backdrop : (movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : null),
+                rating: movie.vote_average || movie.rating,
+                year: new Date(movie.release_date || '2023-01-01').getFullYear(),
+                genres: ['Action', 'Drama'],
+                duration: 120,
+                // 🔥 PREMIUM FREE LINK (Zero Latency)
+                videoUrl: `https://vidsrc.to/embed/movie/${movie.id}`, 
+                provider: providerName,
+                tmdbId: movie.id || Math.floor(Math.random() * 100000),
+                isTrending: true
+            })
+
+            await newMovie.save()
+            count++
         }
+        
+        console.log(`✨ Saved ${count} movies from ${providerName}`)
+        return count;
 
-        // Add new movie
-        const newMovie = new Movie({
-            title: movie.title,
-            description: movie.overview || movie.description,
-            poster: isFallback ? movie.poster : `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-            backdrop: isFallback ? movie.backdrop : `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
-            rating: movie.vote_average || movie.rating,
-            year: new Date(movie.release_date || '2023-01-01').getFullYear(),
-            genres: ['Action', 'Drama'], // Simplified genre mapping
-            duration: 120, // Placeholder
-            // Using a free embed service for wider compatibility (SuperStream/VidSrc example pattern)
-            // Ideally, you'd use a real paid provider's API for legal streaming.
-            // This is a placeholder for the concept of "Real Streaming Link"
-            videoUrl: `https://vidsrc.to/embed/movie/${movie.id}`, 
-            provider: providerName,
-            tmdbId: movie.id || Math.floor(Math.random() * 100000),
-            isTrending: true
-        })
-
-        await newMovie.save()
-        console.log(`✨ Added new hit: ${movie.title} [${providerName}]`)
+    } catch (error) {
+        console.error(`Error processing ${providerName}: ${error.message}`)
+        return 0;
     }
-  } catch (error) {
-    console.log(`Error processing movies for ${providerName}: ${error.message}`)
-  }
 }

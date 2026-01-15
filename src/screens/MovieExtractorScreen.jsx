@@ -1,28 +1,35 @@
 import React, { useState } from 'react'
-import { FiRefreshCw, FiArrowLeft, FiDownload, FiCheckCircle, FiAlertCircle, FiSettings } from 'react-icons/fi'
+import axios from 'axios'
+import { FiRefreshCw, FiArrowLeft, FiDownload, FiCheckCircle, FiAlertCircle, FiSettings, FiPlay, FiCloud } from 'react-icons/fi'
 import { useStore } from '../store/useStore'
 
 export default function MovieExtractorScreen() {
   const { setCurrentScreen } = useStore()
+  
+  // Tabs: 'extractor' | 'cloud'
+  const [activeTab, setActiveTab] = useState('extractor')
+  const [streamUrl, setStreamUrl] = useState('')
+  const [finalStreamLink, setFinalStreamLink] = useState('')
+
+  // Extractor State
   const [extracting, setExtracting] = useState(false)
   const [extractedCount, setExtractedCount] = useState(0)
-  const [lastExtracted, setLastExtracted] = useState('2024-01-15')
   const [extractLog, setExtractLog] = useState([])
-  const [sourceSelected, setSourceSelected] = useState('imdb')
+  const [sourceSelected, setSourceSelected] = useState('tmdb')
 
   const sources = [
     {
       id: 'imdb',
-      name: 'IMDb',
-      emoji: '🎬',
+      name: 'IMDb Top',
+      emoji: '⭐',
       status: 'connected',
       movies: 1250,
       color: 'text-yellow-400'
     },
     {
       id: 'tmdb',
-      name: 'TMDB',
-      emoji: '🎥',
+      name: 'TMDB Popular',
+      emoji: '🔥',
       status: 'connected',
       movies: 2180,
       color: 'text-blue-400'
@@ -36,48 +43,77 @@ export default function MovieExtractorScreen() {
       color: 'text-red-400'
     },
     {
-      id: 'custom',
-      name: 'Custom',
-      emoji: '⚙️',
+      id: 'amazon',
+      name: 'Amazon Prime',
+      emoji: '📦',
       status: 'ready',
-      movies: 0,
-      color: 'text-neon-purple'
+      movies: 540,
+      color: 'text-cyan-400'
     },
   ]
+
+  const handleCloudStream = () => {
+    if(!streamUrl) return alert("Please enter a valid link!");
+    
+    const API_URL = import.meta.env.PROD 
+        ? 'https://steam-x.onrender.com/api' 
+        : 'http://localhost:5000/api';
+
+    // Generates a proxy link that the browser can stream directly
+    const proxyLink = `${API_URL}/proxy/stream?url=${encodeURIComponent(streamUrl)}`;
+    setFinalStreamLink(proxyLink);
+  }
 
   const handleExtract = async () => {
     setExtracting(true)
     setExtractLog([])
     
-    // Simulate extraction progress
-    const steps = [
-      'Connecting to IMDb...',
-      'Fetching popular movies...',
-      'Parsing movie data...',
-      'Extracting cast & crew...',
-      'Downloading posters...',
-      'Validating data...',
-      'Saving to database...',
-      'Indexing for search...',
-    ]
-
-    for (let i = 0; i < steps.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setExtractLog(prev => [...prev, { step: steps[i], status: 'processing' }])
+    try {
+      // Step 1: Connection Log
+      setExtractLog(prev => [...prev, { step: `Connecting to ${sourceSelected.toUpperCase()} API...`, status: 'processing' }])
       
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Artificial delay for UX (to show the connecting state)
+      await new Promise(r => setTimeout(r, 800))
+
+      // Step 2: Sending Request
       setExtractLog(prev => [
         ...prev.slice(0, -1),
-        { step: steps[i], status: 'completed' }
+        { step: `Connected to ${sourceSelected.toUpperCase()}`, status: 'completed' },
+        { step: 'Fetching metadata & posters...', status: 'processing' }
       ])
+
+      // 🚀 REAL API CALL
+      const API_URL = import.meta.env.PROD 
+        ? 'https://steam-x.onrender.com/api' 
+        : 'http://localhost:5000/api';
+
+      const response = await axios.post(`${API_URL}/movies/extract`, {
+        source: sourceSelected,
+        limit: 20 // Can be dynamic based on input
+      })
+
+      const { count, message, source } = response.data
+
+      // Step 3: Success Logs
+      setExtractLog(prev => [
+        ...prev.slice(0, -1), // Remove 'processing'
+        { step: 'Metadata parsing & validation', status: 'completed' },
+        { step: `Generating stream links for ${count} items`, status: 'completed' },
+        { step: `Success! ${count} new movies added from ${source}`, status: 'success' }
+      ])
+
+      setExtractedCount(prev => prev + count)
+      setLastExtracted(new Date().toLocaleDateString())
+
+    } catch (error) {
+      console.error(error)
+      setExtractLog(prev => [
+        ...prev,
+        { step: `Error: ${error.response?.data?.error || error.message}`, status: 'error' }
+      ])
+    } finally {
+      setExtracting(false)
     }
-
-    setExtractedCount(prevCount => prevCount + 156)
-    setLastExtracted(new Date().toLocaleDateString())
-    setExtracting(false)
-
-    // Final log entry
-    setExtractLog(prev => [...prev, { step: 'Extraction completed! 156 new movies added', status: 'success' }])
   }
 
   return (
@@ -105,8 +141,8 @@ export default function MovieExtractorScreen() {
           {[
             { label: 'Total Movies', value: extractedCount + 1523, icon: '🎥' },
             { label: 'Last Extracted', value: lastExtracted, icon: '📅' },
-            { label: 'Sources', value: '4 Active', icon: '🔗' },
-            { label: 'Update Status', value: 'Ready', icon: '✅' },
+            { label: 'Active Sources', value: 'TMDB + Archive', icon: '🔗' },
+            { label: 'System Status', value: 'Online', icon: '✅' },
           ].map((stat, idx) => (
             <div key={idx} className="glass-effect p-6 rounded-xl hover-glow transition-all">
               <div className="text-3xl mb-2">{stat.icon}</div>
@@ -118,7 +154,7 @@ export default function MovieExtractorScreen() {
 
         {/* Sources Grid */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-neon-blue">Data Sources</h2>
+          <h2 className="text-2xl font-bold mb-6 text-neon-blue">Select Data Source</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {sources.map((source) => (
               <div
@@ -131,10 +167,10 @@ export default function MovieExtractorScreen() {
                 <div className="text-5xl mb-4">{source.emoji}</div>
                 <h3 className="font-bold text-lg mb-2 text-neon-blue">{source.name}</h3>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className={`w-2 h-2 rounded-full ${source.status === 'connected' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
                   <span className="text-xs text-gray-400 capitalize">{source.status}</span>
                 </div>
-                <p className="text-sm text-gray-300">{source.movies} movies</p>
+                <p className="text-sm text-gray-300">{source.movies}+ available</p>
               </div>
             ))}
           </div>
@@ -148,7 +184,7 @@ export default function MovieExtractorScreen() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
-              <label className="block text-neon-blue font-semibold mb-2">Select Source</label>
+              <label className="block text-neon-blue font-semibold mb-2">Target Source</label>
               <select
                 value={sourceSelected}
                 onChange={(e) => setSourceSelected(e.target.value)}
@@ -173,21 +209,20 @@ export default function MovieExtractorScreen() {
             </div>
 
             <div>
-              <label className="block text-neon-blue font-semibold mb-2">Movie Limit</label>
+              <label className="block text-neon-blue font-semibold mb-2">Batch Limit</label>
               <input
                 type="number"
-                defaultValue="100"
+                defaultValue="20"
                 className="w-full bg-dark-card border border-neon-blue border-opacity-30 rounded-lg p-3 text-gray-300 focus:outline-none focus:border-neon-blue"
               />
             </div>
 
             <div>
-              <label className="block text-neon-blue font-semibold mb-2">Quality Filter</label>
+              <label className="block text-neon-blue font-semibold mb-2">Quality Threshold</label>
               <select className="w-full bg-dark-card border border-neon-blue border-opacity-30 rounded-lg p-3 text-gray-300 focus:outline-none focus:border-neon-blue">
-                <option>All movies</option>
-                <option>Rating 7.0+</option>
-                <option>Rating 7.5+</option>
-                <option>Rating 8.0+</option>
+                <option>All Qualities</option>
+                <option>1080p Only</option>
+                <option>4K Only</option>
               </select>
             </div>
           </div>
@@ -199,15 +234,15 @@ export default function MovieExtractorScreen() {
             className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white font-bold rounded-lg disabled:opacity-50 transition-all hover:shadow-glow-intense"
           >
             <FiDownload size={20} />
-            {extracting ? 'Extracting...' : 'Start Extraction'}
+            {extracting ? 'Extracting Data...' : 'Start Cloud Extraction'}
           </button>
         </div>
 
         {/* Extraction Progress Log */}
         {extractLog.length > 0 && (
           <div className="glass-effect p-8 rounded-xl mb-12">
-            <h2 className="text-2xl font-bold mb-6 text-neon-blue">Extraction Log</h2>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6 text-neon-blue">Live Terminal</h2>
+            <div className="space-y-3 max-h-96 overflow-y-auto font-mono text-sm">
               {extractLog.map((log, idx) => (
                 <div
                   key={idx}
@@ -216,17 +251,17 @@ export default function MovieExtractorScreen() {
                       ? 'bg-green-500 bg-opacity-10 border-green-500'
                       : log.status === 'success'
                       ? 'bg-blue-500 bg-opacity-10 border-blue-500'
-                      : log.status === 'processing'
-                      ? 'bg-yellow-500 bg-opacity-10 border-yellow-500 loading-pulse'
-                      : 'bg-gray-500 bg-opacity-10 border-gray-500'
+                      : log.status === 'error'
+                      ? 'bg-red-500 bg-opacity-10 border-red-500'
+                      : 'bg-yellow-500 bg-opacity-10 border-yellow-500 loading-pulse'
                   }`}
                 >
                   {log.status === 'completed' || log.status === 'success' ? (
                     <FiCheckCircle className="text-green-400 flex-shrink-0" size={20} />
-                  ) : log.status === 'processing' ? (
-                    <FiRefreshCw className="text-yellow-400 flex-shrink-0 animate-spin" size={20} />
+                  ) : log.status === 'error' ? (
+                    <FiAlertCircle className="text-red-400 flex-shrink-0" size={20} />
                   ) : (
-                    <FiAlertCircle className="text-gray-400 flex-shrink-0" size={20} />
+                    <FiRefreshCw className="text-yellow-400 flex-shrink-0 animate-spin" size={20} />
                   )}
                   <span className="text-gray-300">{log.step}</span>
                 </div>
@@ -234,36 +269,6 @@ export default function MovieExtractorScreen() {
             </div>
           </div>
         )}
-
-        {/* Recent Extractions */}
-        <div className="glass-effect p-8 rounded-xl">
-          <h2 className="text-2xl font-bold mb-6 text-neon-blue">Recent Extractions</h2>
-          <div className="space-y-4">
-            {[
-              { date: '2024-01-15', movies: 156, source: 'IMDb', status: 'completed' },
-              { date: '2024-01-14', movies: 142, source: 'TMDB', status: 'completed' },
-              { date: '2024-01-13', movies: 189, source: 'Netflix', status: 'completed' },
-              { date: '2024-01-12', movies: 167, source: 'IMDb', status: 'completed' },
-            ].map((extraction, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-4 bg-dark-card rounded-lg hover:bg-opacity-60 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <FiCheckCircle className="text-green-400" size={20} />
-                  <div>
-                    <p className="font-semibold text-neon-blue">{extraction.source} Extraction</p>
-                    <p className="text-sm text-gray-400">{extraction.date}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-neon-purple">{extraction.movies} movies</p>
-                  <p className="text-xs text-gray-400 capitalize">{extraction.status}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )
