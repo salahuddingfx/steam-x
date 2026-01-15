@@ -56,7 +56,7 @@ export default function App() {
       <Navbar />
 
       {/* Main Content - pb-64 এ বড় padding যাতে footer জায়গা না দখল করে */}
-      <main className="pt-24 pb-16 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-24 pb-20 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
         {renderScreen()}
       </main>
 

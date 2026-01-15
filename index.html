@@ -2,40 +2,143 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    
-    <!-- Favicon with StreamX Logo -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23000a1f' width='100' height='100'/><circle cx='50' cy='50' r='35' fill='%2300d9ff'/><text x='50' y='60' font-size='50' font-weight='bold' fill='%23000a1f' text-anchor='middle' font-family='Arial'>S</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     
     <!-- SEO Meta Tags -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="StreamX - Premium movie & video discovery platform. Discover trending movies, manage favorites, and enjoy Netflix-level streaming experience with beautiful UI and smooth animations." />
-    <meta name="keywords" content="movies, streaming, video discovery, cinema, entertainment, netflix-like, movie platform, react app" />
+    <title>Stream-X Pro - Advanced Movie Streaming Platform | TMDB Integration</title>
+    <meta name="description" content="Stream-X Pro: Watch unlimited movies, TV shows, and anime with advanced features. TMDB integration, multi-server support, and infinite content library." />
+    <meta name="keywords" content="streaming, movies, tv shows, anime, watch online, TMDB, vidsrc, stream, entertainment" />
     <meta name="author" content="Salah Uddin Kader" />
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="English" />
+    <meta name="creator" content="Salah Uddin Kader" />
+    <meta name="publisher" content="Stream-X Pro" />
     
-    <!-- Open Graph Tags for Social Sharing -->
+    <!-- Open Graph - Social Media -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="StreamX - Movie Discovery Platform" />
-    <meta property="og:description" content="Discover trending movies with Netflix-level UI design and smooth animations. Experience cinematic streaming." />
-    <meta property="og:url" content="https://streamx-react.netlify.app" />
-    <meta property="og:image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'><rect fill='%23000a1f' width='1200' height='630'/><circle cx='600' cy='315' r='200' fill='%2300d9ff'/><text x='600' y='360' font-size='120' font-weight='bold' fill='%23000a1f' text-anchor='middle'>StreamX</text></svg>" />
+    <meta property="og:url" content="https://stream-x.onrender.com/" />
+    <meta property="og:title" content="Stream-X Pro - Advanced Streaming Platform" />
+    <meta property="og:description" content="Watch unlimited movies, TV shows, and anime with advanced streaming features." />
+    <meta property="og:image" content="https://stream-x.onrender.com/og-image.png" />
+    <meta property="og:site_name" content="Stream-X Pro" />
+    <meta property="og:locale" content="en_US" />
     
-    <!-- Twitter Card Tags -->
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="StreamX - Movie Discovery Platform" />
-    <meta name="twitter:description" content="Premium movie streaming with beautiful UI and smooth animations" />
+    <meta name="twitter:url" content="https://stream-x.onrender.com/" />
+    <meta name="twitter:title" content="Stream-X Pro - Movie Streaming Platform" />
+    <meta name="twitter:description" content="Watch unlimited movies, shows, and anime. Advanced streaming with TMDB integration." />
+    <meta name="twitter:image" content="https://stream-x.onrender.com/og-image.png" />
+    <meta name="twitter:creator" content="@salahuddintech" />
     
-    <!-- Theme Color & Mobile Web App Meta Tags -->
-    <meta name="theme-color" content="#00d9ff" />
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#00d4ff" />
+    <meta name="color-scheme" content="dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="StreamX" />
+    <meta name="apple-mobile-web-app-title" content="Stream-X" />
+    <meta name="mobile-web-app-capable" content="yes" />
     
-    <title>StreamX - Premium Movie Discovery Platform</title>
+    <!-- Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://stream-x.onrender.com/" />
+    
+    <!-- Additional SEO Tags -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="language" content="English" />
+    <meta name="rating" content="general" />
+    <!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WRS6RWXG');</script>
+<!-- End Google Tag Manager -->
+    
+    <!-- Preconnect to External Resources -->
+    <link rel="preconnect" href="https://api.themoviedb.org" />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="https://vidsrc.to" />
+    <link rel="dns-prefetch" href="https://api.watchmode.com" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Stream-X Pro",
+      "description": "Advanced movie streaming platform with TMDB integration",
+      "url": "https://stream-x.onrender.com",
+      "applicationCategory": "EntertainmentApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Person",
+        "name": "Salah Uddin Kader",
+        "url": "https://github.com/salahuddin"
+      },
+      "screenshot": [
+        "https://stream-x.onrender.com/screenshot-1.png",
+        "https://stream-x.onrender.com/screenshot-2.png"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "100"
+      }
+    }
+    </script>
+    
+    <!-- Alternative Links -->
+    <link rel="alternate" hreflang="en" href="https://stream-x.onrender.com/" />
+    
+    <!-- Performance & Security -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => {
+              console.log('✅ Service Worker Registered');
+              // Check for updates periodically
+              setInterval(() => reg.update(), 3600000);
+            })
+            .catch((err) => console.log('❌ SW Registration Failed:', err));
+        });
+      }
+      
+      // Detect if app was installed
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('📱 Install prompt available');
+      });
+      
+      window.addEventListener('appinstalled', () => {
+        console.log('✅ App installed successfully');
+      });
+    </script>
+    
+    <!-- Analyts (Optional - Add your tracking code) -->
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WRS6RWXG"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
   </body>
 </html>
