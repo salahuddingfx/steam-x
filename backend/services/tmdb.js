@@ -2,33 +2,88 @@ import axios from 'axios'
 import mongoose from 'mongoose'
 import Movie from '../models/Movie.js'
 
-// REMOVED top-level const to fix ESM hoisting issue
-// const TMDB_API_KEY = process.env.TMDB_API_KEY; 
 const BASE_URL = 'https://api.themoviedb.org/3'
 
-// Fallback manual movies if API fails
-const FALLBACK_MOVIES = [
-  {
-    title: 'Extraction 2',
-    description: 'Back from the brink of death, commando Tyler Rake embarks on a dangerous mission to save a ruthless gangster\'s imprisoned family.',
-    poster: 'https://image.tmdb.org/t/p/w500/7gKI9hpEMcZUQpNgadiJL8W3Ryt.jpg',
-    backdrop: 'https://image.tmdb.org/t/p/original/rM5Y0ziCtmpwIDNbC1CYQ8g7wr0.jpg',
-    rating: 7.5,
-    year: 2023,
-    provider: 'Netflix',
-    videoUrl: 'https://vidsrc.to/embed/movie/385687' // Real ID
-  },
-  {
-    title: 'The Tomorrow War',
-    description: 'The world is stunned when a group of time travelers arrive from the year 2051.',
-    poster: 'https://image.tmdb.org/t/p/w500/34nDCQZwaEvsy4CFO5hkGRFDCVU.jpg',
-    backdrop: 'https://image.tmdb.org/t/p/original/xXHZeb1yhJvnSHPzZDqee0zfQq6.jpg',
-    rating: 8.0,
-    year: 2021,
-    provider: 'Amazon Prime',
-    videoUrl: 'https://vidsrc.to/embed/movie/588228' // Real ID
-  }
+// ─────────────────────────────────────────────
+// ALL TMDB categories we crawl systematically.
+// Each entry fetches `page` from that endpoint.
+// This gives us: movies + TV, all genres, all providers.
+// ─────────────────────────────────────────────
+const SYNC_CATALOG = [
+  // ── Movies ──────────────────────────────────
+  { path: '/movie/popular',                                               label: 'Popular',         type: 'movie' },
+  { path: '/movie/top_rated',                                             label: 'Top Rated',       type: 'movie' },
+  { path: '/movie/now_playing',                                           label: 'Cinema',          type: 'movie' },
+  { path: '/movie/upcoming',                                              label: 'Upcoming',        type: 'movie' },
+  { path: '/trending/movie/week',                                         label: 'Trending',        type: 'movie' },
+  // ── TV / Series ─────────────────────────────
+  { path: '/tv/popular',                                                  label: 'TV Popular',      type: 'tv' },
+  { path: '/tv/top_rated',                                                label: 'TV Top Rated',    type: 'tv' },
+  { path: '/tv/on_the_air',                                               label: 'Now Airing',      type: 'tv' },
+  { path: '/trending/tv/week',                                            label: 'TV Trending',     type: 'tv' },
+  // ── Discover: Genres ────────────────────────
+  { path: '/discover/movie?with_genres=28',                               label: 'Action',          type: 'movie' },
+  { path: '/discover/movie?with_genres=12',                               label: 'Adventure',       type: 'movie' },
+  { path: '/discover/movie?with_genres=35',                               label: 'Comedy',          type: 'movie' },
+  { path: '/discover/movie?with_genres=18',                               label: 'Drama',           type: 'movie' },
+  { path: '/discover/movie?with_genres=27',                               label: 'Horror',          type: 'movie' },
+  { path: '/discover/movie?with_genres=878',                              label: 'Sci-Fi',          type: 'movie' },
+  { path: '/discover/movie?with_genres=53',                               label: 'Thriller',        type: 'movie' },
+  { path: '/discover/movie?with_genres=16',                               label: 'Animation',       type: 'movie' },
+  { path: '/discover/movie?with_genres=10749',                            label: 'Romance',         type: 'movie' },
+  { path: '/discover/movie?with_genres=80',                               label: 'Crime',           type: 'movie' },
+  { path: '/discover/movie?with_genres=99',                               label: 'Documentary',     type: 'movie' },
+  { path: '/discover/movie?with_genres=14',                               label: 'Fantasy',         type: 'movie' },
+  // ── Discover: Anime & Cartoons ───────────────
+  { path: '/discover/tv?with_genres=16&sort_by=popularity.desc',         label: 'Anime',           type: 'tv' },
+  { path: '/discover/tv?with_genres=10759',                               label: 'Action Series',   type: 'tv' },
+  { path: '/discover/tv?with_genres=18',                                  label: 'Drama Series',    type: 'tv' },
+  { path: '/discover/tv?with_genres=35',                                  label: 'Comedy Series',   type: 'tv' },
+  { path: '/discover/tv?with_genres=9648',                                label: 'Mystery Series',  type: 'tv' },
+  // ── Streaming Providers ─────────────────────
+  { path: '/discover/movie?with_watch_providers=8&watch_region=US',      label: 'Netflix',         type: 'movie' },
+  { path: '/discover/movie?with_watch_providers=9&watch_region=US',      label: 'Amazon Prime',    type: 'movie' },
+  { path: '/discover/movie?with_watch_providers=337&watch_region=US',    label: 'Disney+',         type: 'movie' },
+  { path: '/discover/movie?with_watch_providers=384&watch_region=US',    label: 'HBO Max',         type: 'movie' },
+  { path: '/discover/movie?with_watch_providers=350&watch_region=US',    label: 'Apple TV+',       type: 'movie' },
+  { path: '/discover/tv?with_watch_providers=8&watch_region=US',         label: 'Netflix Series',  type: 'tv' },
+  { path: '/discover/tv?with_watch_providers=9&watch_region=US',         label: 'Prime Series',    type: 'tv' },
+  { path: '/discover/tv?with_watch_providers=337&watch_region=US',       label: 'Disney Series',   type: 'tv' },
+  // ── Year-based ───────────────────────────────
+  { path: '/discover/movie?primary_release_year=2025&sort_by=popularity.desc', label: '2025 Movies', type: 'movie' },
+  { path: '/discover/movie?primary_release_year=2024&sort_by=popularity.desc', label: '2024 Movies', type: 'movie' },
+  { path: '/discover/movie?primary_release_year=2023&sort_by=popularity.desc', label: '2023 Movies', type: 'movie' },
 ]
+
+// ─────────────────────────────────────────────
+// DEEP SYNC — called every 15 min by updater.
+// Fetches `page` from every category in SYNC_CATALOG.
+// Each call = ~36 categories × 20 movies = ~720 unique movies tried.
+// ─────────────────────────────────────────────
+export const deepSyncTMDB = async (page = 1) => {
+  const apiKey = getKey()
+  let totalSaved = 0
+
+  for (const cat of SYNC_CATALOG) {
+    try {
+      const separator = cat.path.includes('?') ? '&' : '?'
+      const url = `${BASE_URL}${cat.path}${separator}api_key=${apiKey}&language=en-US&page=${page}`
+      const res = await axios.get(url, { timeout: 8000 })
+      if (res.data?.results?.length) {
+        const saved = await processMovies(res.data.results, cat.label, false, cat.type)
+        totalSaved += saved
+      }
+      // Respect TMDB rate limit: 40 req/10s → ~250ms gap is safe
+      await new Promise(r => setTimeout(r, 260))
+    } catch (e) {
+      // Silently skip failed categories (API limit / network blip)
+    }
+  }
+
+  console.log(`✅ Deep sync page ${page} done — ${totalSaved} new items saved`)
+  return totalSaved
+}
+
 
 // Helper to reliably get key at RUNTIME
 const getKey = () => {
@@ -206,8 +261,6 @@ export const fetchTrendingData = async () => {
         return true
     } catch (error) {
         console.error('TMDB Auto-Update Error:', error.message)
-        // Fallback
-        await processMovies(FALLBACK_MOVIES, 'Mixed', true)
         return false
     }
 }
@@ -219,7 +272,7 @@ export const getDirectMovies = async () => {
         const res = await axios.get(`${BASE_URL}/movie/now_playing?api_key=${apiKey}&language=en-US&page=1`)
         return res.data.results.map(m => formatMovie(m, 'Cinema'))
     } catch (error) {
-        return FALLBACK_MOVIES
+        return []
     }
 }
 

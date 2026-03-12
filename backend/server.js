@@ -48,12 +48,17 @@ import movieRoutes from './routes/movie.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import proxyRoutes from './routes/proxy.routes.js'
 // Import jobs/services but don't run them yet
-import { startContentUpdater } from './jobs/updater.js'
+import { startContentUpdater, startKeepAlive } from './jobs/updater.js'
 import { fetchTrendingData } from './services/tmdb.js'
 
 app.use('/api/movies', movieRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/proxy', proxyRoutes)
+
+// Health check / keep-alive endpoint
+app.get('/api/ping', (req, res) => {
+  res.json({ status: 'alive', time: new Date().toISOString() })
+})
 
 // Error Handler
 app.use(errorHandler)
@@ -116,7 +121,10 @@ httpServer.listen(PORT, async () => {
       console.log(chalk.yellow('⬇ Triggering Initial Content Update (2024-2026 + Anime)...'));
       
       // Start Scheduler
-      startContentUpdater(); 
+      startContentUpdater();
+      
+      // Start keep-alive self-ping (prevents Render free tier sleep)
+      startKeepAlive();
       
       // Run Immediate Fetch
       fetchTrendingData().then(() => {

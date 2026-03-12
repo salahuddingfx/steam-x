@@ -26,7 +26,21 @@ export default function App() {
     hydrateAuth()
 
     const timer = setTimeout(() => setShowLoader(false), 3000)
-    return () => clearTimeout(timer)
+
+    // Keep backend alive on Render free tier.
+    // Render shuts down after 15 min inactivity — we ping every 55s.
+    const API_URL = import.meta.env.PROD
+      ? 'https://steam-x.onrender.com'
+      : 'http://localhost:5000'
+
+    const keepAlive = setInterval(() => {
+      fetch(`${API_URL}/api/ping`).catch(() => {})
+    }, 55 * 1000)
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(keepAlive)
+    }
   }, [hydrateAuth, initSocket])
 
   const renderScreen = () => {
