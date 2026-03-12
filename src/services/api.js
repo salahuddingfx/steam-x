@@ -1,7 +1,25 @@
 // Dynamic API URL for both dev and production
+import { mockMovies } from '../data/mockData.js'
+
 const API_URL = import.meta.env.PROD
   ? 'https://steam-x.onrender.com'
   : 'http://localhost:5000'
+
+// Check if backend is reachable; cache result for 30s
+let _backendAlive = null
+let _lastCheck = 0
+const isBackendAlive = async () => {
+  const now = Date.now()
+  if (_backendAlive !== null && now - _lastCheck < 30_000) return _backendAlive
+  try {
+    await fetch(`${API_URL}/api/ping`, { signal: AbortSignal.timeout(3000) })
+    _backendAlive = true
+  } catch {
+    _backendAlive = false
+  }
+  _lastCheck = now
+  return _backendAlive
+}
 
 const requestJSON = async (path, options = {}) => {
   const response = await fetch(`${API_URL}${path}`, options)
@@ -69,6 +87,14 @@ export const authAPI = {
 export const movieAPI = {
   getAll: async (search = '', genre = '', sort = 'trending', page = 1, limit = 100) => {
     try {
+      const alive = await isBackendAlive()
+      if (!alive) {
+        // backend offline → return mockData so UI is never blank
+        let results = mockMovies
+        if (search) results = results.filter(m => m.title.toLowerCase().includes(search.toLowerCase()))
+        return results
+      }
+
       const params = new URLSearchParams()
       if (search) params.append('search', search)
       if (genre) params.append('genre', genre)
@@ -77,19 +103,24 @@ export const movieAPI = {
       params.append('limit', limit)
 
       const response = await fetch(`${API_URL}/api/movies?${params}`)
-      return await response.json()
+      const data = await response.json()
+      // If backend returned empty, supplement with mock data
+      if (!Array.isArray(data) || data.length === 0) {
+        return mockMovies
+      }
+      return data
     } catch (error) {
-      console.error('Error fetching movies:', error)
-      return []
+      return mockMovies
     }
   },
 
   getById: async (id) => {
     try {
       const response = await fetch(`${API_URL}/api/movies/${id}`)
+      const ct = response.headers.get('content-type') || ''
+      if (!response.ok || !ct.includes('application/json')) return null
       return await response.json()
-    } catch (error) {
-      console.error('Error fetching movie:', error)
+    } catch {
       return null
     }
   },
@@ -97,10 +128,13 @@ export const movieAPI = {
   getTrending: async () => {
     try {
       const response = await fetch(`${API_URL}/api/movies/trending/all`)
+      const ct = response.headers.get('content-type') || ''
+      if (!response.ok || !ct.includes('application/json')) {
+        return mockMovies.slice(0, 10)
+      }
       return await response.json()
-    } catch (error) {
-      console.error('Error fetching trending:', error)
-      return []
+    } catch {
+      return mockMovies.slice(0, 10)
     }
   },
 }

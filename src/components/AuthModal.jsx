@@ -29,8 +29,7 @@ export default function AuthModal() {
     confirmPassword: '',
   })
 
-  if (!showAuthModal) return null
-
+  // ⚠️ ALL hooks must be declared BEFORE any early return (Rules of Hooks)
   const passwordStrength = useMemo(() => {
     const pwd = formData.password || ''
     if (!pwd) return ''
@@ -45,6 +44,9 @@ export default function AuthModal() {
     if (score <= 3) return 'Medium password'
     return 'Strong password'
   }, [formData.password])
+
+  // Early return AFTER all hooks
+  if (!showAuthModal) return null
 
   const handleChange = (e) => {
     const { name, value } = e.target

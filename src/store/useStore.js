@@ -4,18 +4,24 @@ import { mockMovies } from '../data/mockData'
 import { authAPI } from '../services/api'
 import { io } from 'socket.io-client'
 
-// Socket.io Connection
-const socket = io(import.meta.env.PROD 
-  ? 'https://steam-x.onrender.com' // <--- PUT YOUR BACKEND URL HERE (No /api)
-  : 'http://localhost:5000', 
-  {
-    autoConnect: true,
-    reconnection: true,
-  })
+// Socket.io Connection — graceful offline: don't crash if backend is down
+const SOCKET_URL = import.meta.env.PROD
+  ? 'https://steam-x.onrender.com'
+  : 'http://localhost:5000'
 
-// Instant Listener Attachment (Fixes racing condition)
+const socket = io(SOCKET_URL, {
+  autoConnect: false,  // don't connect immediately — wait for initSocket()
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 3000,
+  timeout: 5000,
+})
+
 socket.on('connect', () => {
-    console.log('🟢 Socket connected:', socket.id)
+  console.log('🟢 Socket connected:', socket.id)
+})
+socket.on('connect_error', () => {
+  // Silently absorb — backend may be offline in local dev
 })
 
 export const useStore = create(
@@ -33,8 +39,10 @@ export const useStore = create(
       onlineUsers: 1, // Default to 1 (Me) until server updates
        
       initSocket: () => {
-         // Check connection manual
-         if (!socket.connected) socket.connect()
+        // Only connect if not already connected/connecting
+        if (!socket.connected) {
+          socket.connect()
+        }
       },
       
       // --- Screens & Navigation ---

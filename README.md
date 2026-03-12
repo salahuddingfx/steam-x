@@ -131,7 +131,27 @@ npm start
 
 ## 🛡 License & Legal
 
-This project aggregates content from **TMDB**, **Archive.org**, and legal streaming providers via **Watchmode**. Use responsibly.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for full terms.
+
+Stream-X aggregates content metadata from **TMDB**, streams from **Internet Archive** (public domain) and **VidSrc** embeds, and legal provider links from **Watchmode**. Use responsibly and always support official streaming platforms.
+
+---
+
+## 🔒 Security
+
+Found a vulnerability? See [SECURITY.md](SECURITY.md) for responsible disclosure guidelines.
+
+Key protections: bcryptjs hashing · JWT auth · Input validation · Proxy whitelist · `.env` never committed
+
+---
+
+## 🤝 Contributing
+
+Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before contributing.
+
+1. Fork → `git checkout -b feat/your-feature` → commit → Pull Request
 
 <div align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=00c6ff&height=150&section=footer&text=Thanks%20for%20Visiting&fontSize=40&fontColor=ffffff" width="100%" />
