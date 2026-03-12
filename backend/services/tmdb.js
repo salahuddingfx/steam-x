@@ -4,6 +4,17 @@ import Movie from '../models/Movie.js'
 
 const BASE_URL = 'https://api.themoviedb.org/3'
 
+// TMDB genre ID → name mapping
+const TMDB_GENRE_MAP = {
+    12: 'Adventure', 14: 'Fantasy', 16: 'Animation', 18: 'Drama',
+    27: 'Horror', 28: 'Action', 35: 'Comedy', 36: 'History',
+    53: 'Thriller', 80: 'Crime', 99: 'Documentary', 878: 'Sci-Fi',
+    9648: 'Mystery', 10402: 'Music', 10749: 'Romance', 10751: 'Family',
+    10752: 'War', 10759: 'Action & Adventure', 10762: 'Kids',
+    10763: 'News', 10764: 'Reality', 10765: 'Sci-Fi & Fantasy',
+    10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics', 10770: 'TV Movie',
+}
+
 // ─────────────────────────────────────────────
 // ALL TMDB categories we crawl systematically.
 // Each entry fetches `page` from that endpoint.
@@ -339,7 +350,7 @@ const processMovies = async (movies, providerName, isFallback = false, type = 'm
                 backdrop: isFallback ? movie.backdrop : (movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : null),
                 rating: movie.vote_average || movie.rating,
                 year: new Date(movie.release_date || movie.first_air_date || '2023-01-01').getFullYear(),
-                genres: ['Action', 'Drama'],
+                genres: (movie.genre_ids || []).map(id => TMDB_GENRE_MAP[id]).filter(Boolean),
                 duration: 120,
                 type: type,
                 // 🔥 PREMIUM FREE LINK (Zero Latency)

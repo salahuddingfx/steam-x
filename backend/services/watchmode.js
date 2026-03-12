@@ -19,7 +19,7 @@ export const getWatchLinks = async (tmdbId, movieTitle) => {
         if (!apiKey) return { success: false, providers: [] };
 
         // Step 1: Get Watchmode ID from TMDB ID
-        const searchUrl = `${WATCHMODE_BASE_URL}/search/?query=${encodeURIComponent(movieTitle)}&apiKey=${apiKey}`;
+        const searchUrl = `${WATCHMODE_BASE_URL}/search/?apiKey=${apiKey}&search_field=name&search_value=${encodeURIComponent(movieTitle)}&types=movie,tv_movie`;
         const searchRes = await axios.get(searchUrl);
 
         if (!searchRes.data.results || searchRes.data.results.length === 0) {

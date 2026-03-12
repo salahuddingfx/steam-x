@@ -41,12 +41,39 @@ export default function HomeScreen() {
   const topTrending = movies.filter(m => m.isTrending).slice(0, 5) // Top 5 for banner
   const featuredMovie = topTrending[bannerIndex] || movies[0];
 
-  const trending = movies.filter(m => m.isTrending).slice(0, 15)
-  const newReleases = movies.filter(m => m.provider === 'Cinema' || m.year >= 2024).slice(0, 10)
-  const netflixOriginals = movies.filter(m => m.provider === 'Netflix')
-  const amazonHits = movies.filter(m => m.provider === 'Amazon Prime')
-  const animeHits = movies.filter(m => m.provider === 'Anime Hits' || (m.genres && m.genres.includes('Animation')))
-  const familyHits = movies.filter(m => m.provider === 'Family 3D')
+    // Helper: check genre in either field name (DB uses 'genres', mockData uses 'genre')
+    const hasGenre = (m, g) => {
+        const arr = m.genres || m.genre || []
+        return arr.some(x => x?.toLowerCase() === g.toLowerCase())
+    }
+
+    const trending = movies.filter(m => m.isTrending).slice(0, 15)
+    const newReleases = movies.filter(m =>
+        ['Cinema', '2024 Movies', '2025 Movies', '2023 Movies', 'Cinema 2024', 'Cinema 2025'].includes(m.provider) ||
+        m.year >= 2024
+    ).slice(0, 15)
+    const netflixOriginals = movies.filter(m =>
+        ['Netflix', 'Netflix Series', 'Netflix Exclusive'].includes(m.provider)
+    )
+    const amazonHits = movies.filter(m =>
+        ['Amazon Prime', 'Prime Series'].includes(m.provider)
+    )
+    const animeHits = movies.filter(m =>
+        ['Anime', 'Animation', 'Anime/Cartoon Series 2024', 'Anime/Cartoon Series 2025',
+         'Animation 2024', 'Animation 2025', 'Disney Series', 'Disney+'].includes(m.provider) ||
+        hasGenre(m, 'Animation') || hasGenre(m, 'Anime')
+    )
+    const familyHits = movies.filter(m =>
+        ['Family', 'Kids', 'Disney+', 'Disney Series'].includes(m.provider) ||
+        hasGenre(m, 'Family') || hasGenre(m, 'Kids')
+    )
+    const actionHits = movies.filter(m =>
+        m.provider === 'Action' || hasGenre(m, 'Action')
+    ).slice(0, 15)
+    const scifiHits = movies.filter(m =>
+        ['Sci-Fi', 'Thriller', 'Psychological Thrillers'].includes(m.provider) ||
+        hasGenre(m, 'Sci-Fi') || hasGenre(m, 'Thriller')
+    ).slice(0, 15)
 
   // Auto-Cycle Banner
   useEffect(() => {
@@ -227,9 +254,17 @@ export default function HomeScreen() {
              <MovieSlider title="⛩️ Anime & Animation Hits" movies={animeHits} />
           )}
 
-          {familyHits.length > 0 && (
-             <MovieSlider title="🎬 3D Animation & Family" movies={familyHits} />
-          )}
+             {familyHits.length > 0 && (
+                 <MovieSlider title="🎬 3D Animation & Family" movies={familyHits} />
+             )}
+
+             {actionHits.length > 0 && (
+                 <MovieSlider title="💥 Action & Adventure" movies={actionHits} />
+             )}
+
+             {scifiHits.length > 0 && (
+                 <MovieSlider title="🚀 Sci-Fi & Thriller" movies={scifiHits} />
+             )}
 
           {/* Continue Watching */}
           {continueWatching.length > 0 && (
