@@ -30,7 +30,7 @@ export default function Footer() {
   ), [currentTime])
 
   return (
-    <footer className="relative mt-16 border-t border-emerald-400/20 bg-[linear-gradient(120deg,rgba(6,18,28,0.94),rgba(8,28,32,0.92),rgba(21,16,34,0.92))] backdrop-blur-md">
+    <footer className="fixed bottom-0 left-0 right-0 z-30 border-t border-emerald-400/20 bg-[linear-gradient(120deg,rgba(6,18,28,0.97),rgba(8,28,32,0.96),rgba(21,16,34,0.96))] backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_10%_20%,rgba(16,185,129,0.12),transparent_36%),radial-gradient(circle_at_90%_40%,rgba(14,165,233,0.12),transparent_40%)]" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
