@@ -109,7 +109,7 @@ router.get('/:id', async (req, res) => {
         `https://vidsrc.to/embed/${responseData.type === 'tv' ? 'tv' : 'movie'}/${responseData.tmdbId}`;
 
     // Fetch Watchmode Streaming Options for legal providers
-    const watchmodeData = await getWatchLinks(movie.tmdbId, movie.title);
+    const watchmodeData = await getWatchLinks(movie.tmdbId, movie.title, movie.type);
     
     if (watchmodeData.success) {
         responseData.streamingOptions = watchmodeData.providers;

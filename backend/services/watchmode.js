@@ -13,38 +13,49 @@ const getWatchmodeKey = () => {
 }
 
 // Get streaming links for a movie
-export const getWatchLinks = async (tmdbId, movieTitle) => {
+export const getWatchLinks = async (tmdbId, movieTitle, type = 'movie') => {
     try {
         const apiKey = getWatchmodeKey();
         if (!apiKey) return { success: false, providers: [] };
 
-        // Step 1: Get Watchmode ID from TMDB ID
-        const searchUrl = `${WATCHMODE_BASE_URL}/search/?apiKey=${apiKey}&search_field=name&search_value=${encodeURIComponent(movieTitle)}&types=movie,tv_movie`;
-        const searchRes = await axios.get(searchUrl);
+        let watchmodeId = null;
 
-        if (!searchRes.data.results || searchRes.data.results.length === 0) {
+        // Step 1a: Prefer direct TMDB ID lookup (accurate, no name-match issues)
+        if (tmdbId) {
+            const searchField = type === 'tv' ? 'tmdb_tv_id' : 'tmdb_movie_id';
+            const idUrl = `${WATCHMODE_BASE_URL}/search/?apiKey=${apiKey}&search_field=${searchField}&search_value=${tmdbId}`;
+            const idRes = await axios.get(idUrl);
+            const idResults = idRes.data.title_results || [];
+            if (idResults.length > 0) watchmodeId = idResults[0].id;
+        }
+
+        // Step 1b: Fall back to name search (no 'types' param — it's invalid on /search/)
+        if (!watchmodeId && movieTitle) {
+            const nameUrl = `${WATCHMODE_BASE_URL}/search/?apiKey=${apiKey}&search_field=name&search_value=${encodeURIComponent(movieTitle)}`;
+            const nameRes = await axios.get(nameUrl);
+            const nameResults = nameRes.data.title_results || [];
+            if (nameResults.length > 0) watchmodeId = nameResults[0].id;
+        }
+
+        if (!watchmodeId) {
             return { success: false, providers: [] };
         }
 
-        const watchmodeId = searchRes.data.results[0].id;
-
-        // Step 2: Get Streaming Details
-        const detailsUrl = `${WATCHMODE_BASE_URL}/title/${watchmodeId}/streaming/?apiKey=${apiKey}&regions=US`;
+        // Step 2: Get Streaming Sources (returns array directly)
+        const detailsUrl = `${WATCHMODE_BASE_URL}/title/${watchmodeId}/sources/?apiKey=${apiKey}&regions=US`;
         const detailsRes = await axios.get(detailsUrl);
 
-        if (!detailsRes.data.streaming_options) {
+        const rawOptions = Array.isArray(detailsRes.data) ? detailsRes.data : [];
+
+        if (rawOptions.length === 0) {
             return { success: false, providers: [] };
         }
 
         // Parse and format streaming options
-        const rawOptions = Array.isArray(detailsRes.data.streaming_options)
-            ? detailsRes.data.streaming_options
-            : [];
-
         const providers = rawOptions.map((option) => ({
-            name: option.source_name,
-            type: option.type, // subscription, buy, rent
-            region: 'US',
+            name: option.name,
+            type: option.type, // sub, free, buy, rent
+            region: option.region || 'US',
             logoUrl: option.logo_url,
             webUrl: option.web_url || null,
         }));
@@ -58,7 +69,8 @@ export const getWatchLinks = async (tmdbId, movieTitle) => {
             watchmodeId: watchmodeId,
         };
     } catch (error) {
-        console.error('Watchmode Error:', error.message);
+        const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+        console.error('Watchmode Error:', detail);
         return { success: false, providers: [] };
     }
 }
