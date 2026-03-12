@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import MovieCard from './MovieCard'
 
-export default function MovieSlider({ title, movies }) {
+export default React.memo(function MovieSlider({ title, movies }) {
   const sliderRef = React.useRef(null)
 
   const scroll = (direction) => {
@@ -69,4 +69,4 @@ export default function MovieSlider({ title, movies }) {
       </div>
     </motion.div>
   )
-}
+})

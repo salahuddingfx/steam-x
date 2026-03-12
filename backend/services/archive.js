@@ -39,16 +39,10 @@ export const findArchiveMovie = async (title) => {
       };
 
       let response;
-      let retries = 2;
-      while (retries > 0) {
-        try {
-          response = await axios.get(ARCHIVE_API_URL, { params, timeout: 12000 });
-          break;
-        } catch (e) {
-          retries--;
-          if (retries === 0) throw e;
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+      try {
+        response = await axios.get(ARCHIVE_API_URL, { params, timeout: 5000 });
+      } catch (e) {
+        continue; // Skip this query variant on timeout/error
       }
       const docs = response.data?.response?.docs || [];
 
@@ -68,7 +62,7 @@ export const findArchiveMovie = async (title) => {
     setTimeout(() => archiveCache.delete(cacheKey), NEGATIVE_CACHE_TTL);
     return null;
   } catch (error) {
-    console.error('ArchiveAPISearch Error:', error.message);
+    // Silent failure - Archive.org is optional, VidSrc is the primary source
     return null;
   }
 };

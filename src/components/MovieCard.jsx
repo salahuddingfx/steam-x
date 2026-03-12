@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { FiStar } from 'react-icons/fi'
 import { useStore } from '../store/useStore'
 
-export default function MovieCard({ movie, index }) {
+export default React.memo(function MovieCard({ movie, index }) {
   const { setSelectedMovie, setShowMovieDetail, favorites, toggleFavorite, user } = useStore()
   const isFavorited = favorites.some(m => m.id === movie.id)
   
@@ -135,4 +135,4 @@ export default function MovieCard({ movie, index }) {
       </div>
     </motion.div>
   )
-}
+})

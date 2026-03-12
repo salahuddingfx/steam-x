@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import IntroLoader from './components/IntroLoader'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -7,13 +7,22 @@ import PlayerModal from './components/PlayerModal'
 import AuthModal from './components/AuthModal'
 
 import HomeScreen from './screens/HomeScreen'
-import SearchScreen from './screens/SearchScreen'
-import ContinueWatchingScreen from './screens/ContinueWatchingScreen'
-import FavoritesScreen from './screens/FavoritesScreen'
-import ProfileScreen from './screens/ProfileScreen'
-import SettingsScreen from './screens/SettingsScreen'
-import DeveloperProfileScreen from './screens/DeveloperProfileScreen'
-import MovieExtractorScreen from './screens/MovieExtractorScreen'
+
+// Lazy load non-critical screens for code splitting
+const SearchScreen = lazy(() => import('./screens/SearchScreen'))
+const ContinueWatchingScreen = lazy(() => import('./screens/ContinueWatchingScreen'))
+const FavoritesScreen = lazy(() => import('./screens/FavoritesScreen'))
+const ProfileScreen = lazy(() => import('./screens/ProfileScreen'))
+const SettingsScreen = lazy(() => import('./screens/SettingsScreen'))
+const DeveloperProfileScreen = lazy(() => import('./screens/DeveloperProfileScreen'))
+const MovieExtractorScreen = lazy(() => import('./screens/MovieExtractorScreen'))
+
+// Loading fallback component
+const ScreenLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="w-8 h-8 border-4 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin" />
+  </div>
+)
 
 import { useStore } from './store/useStore'
 
@@ -72,9 +81,11 @@ export default function App() {
 
       <Navbar />
 
-      {/* Main Content - pb-64 এ বড় padding যাতে footer জায়গা না দখল করে */}
+      {/* Main Content */}
       <main className="pt-24 pb-32 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
-        {renderScreen()}
+        <Suspense fallback={<ScreenLoader />}>
+          {renderScreen()}
+        </Suspense>
       </main>
 
       {/* Modals */}

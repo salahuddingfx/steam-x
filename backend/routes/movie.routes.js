@@ -131,9 +131,12 @@ router.get('/:id', async (req, res) => {
     // Prefer ad-free legal playback via Internet Archive (if available)
     let archiveUrl = null;
     try {
-        archiveUrl = await findArchiveMovie(movie.title);
+        archiveUrl = await Promise.race([
+            findArchiveMovie(movie.title),
+            new Promise(resolve => setTimeout(() => resolve(null), 5000))
+        ]);
     } catch (err) {
-        console.log(`Archive lookup failed for "${movie.title}": ${err.message}`);
+        // silent
     }
 
     if (archiveUrl) {
