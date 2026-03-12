@@ -108,8 +108,17 @@ router.get('/:id', async (req, res) => {
     responseData.videoUrl = responseData.videoUrl || 
         `https://vidsrc.to/embed/${responseData.type === 'tv' ? 'tv' : 'movie'}/${responseData.tmdbId}`;
 
-    // Fetch Watchmode Streaming Options for legal providers
-    const watchmodeData = await getWatchLinks(movie.tmdbId, movie.title, movie.type);
+    // Fetch Watchmode Streaming Options for legal providers (with timeout protection)
+    let watchmodeData = { success: false, providers: [] };
+    try {
+        watchmodeData = await Promise.race([
+            getWatchLinks(movie.tmdbId, movie.title, movie.type),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Watchmode timeout')), 6000))
+        ]);
+    } catch (err) {
+        // Watchmode failed or timed out - just use fallback
+        watchmodeData = { success: false, providers: [] };
+    }
     
     if (watchmodeData.success) {
         responseData.streamingOptions = watchmodeData.providers;
