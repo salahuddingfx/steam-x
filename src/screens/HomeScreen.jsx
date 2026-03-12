@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import MovieSlider from '../components/MovieSlider'
 import MovieCard from '../components/MovieCard'
 import { useStore } from '../store/useStore'
@@ -24,7 +24,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const loadMovies = async () => {
       try {
-        const data = await movieAPI.getAll('', '', 'trending', 1, 100)
+        const data = await movieAPI.getAll('', '', 'trending', 1, 40)
         if (data && data.length > 0) {
           setMovies(data)
         }
@@ -93,14 +93,12 @@ export default function HomeScreen() {
       setFadeKey(prev => prev + 1);
   }
 
-  // Infinite Scroll Logic
-  const handleObserver = async (entries) => {
+  // Infinite Scroll Logic — useCallback avoids stale closure
+  const handleObserver = useCallback(async (entries) => {
       const target = entries[0];
       if (target.isIntersecting && !loading && hasMore) {
           try {
               const nextPage = page + 1; 
-              console.log(`🚀 Loading More: Page ${nextPage}`);
-              
               const newData = await movieAPI.getAll('', '', 'trending', nextPage, 24); 
               
               if (newData.length === 0) {
@@ -118,7 +116,7 @@ export default function HomeScreen() {
               setHasMore(false);
           }
       }
-  }
+  }, [page, hasMore, loading, movies])
 
   useEffect(() => {
       const observer = new IntersectionObserver(handleObserver, {

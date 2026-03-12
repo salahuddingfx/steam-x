@@ -22,20 +22,40 @@ const isBackendAlive = async () => {
 }
 
 const requestJSON = async (path, options = {}) => {
-  const response = await fetch(`${API_URL}${path}`, options)
+  // 15s timeout — Render free tier cold-start can take ~30s, warn user if slow
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 15000)
 
-  let data = null
   try {
-    data = await response.json()
-  } catch (e) {
-    data = null
-  }
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+    })
 
-  if (!response.ok) {
-    throw new Error(data?.error || data?.message || 'Request failed')
-  }
+    clearTimeout(timeoutId)
 
-  return data
+    let data = null
+    try {
+      data = await response.json()
+    } catch (e) {
+      data = null
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.error || data?.message || 'Request failed')
+    }
+
+    return data
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Server is starting up — please wait a few seconds and try again.')
+    }
+    if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+      throw new Error('Cannot reach server. Check your connection or try again shortly.')
+    }
+    throw err
+  }
 }
 
 export const authAPI = {

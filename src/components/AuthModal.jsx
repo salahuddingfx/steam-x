@@ -19,6 +19,7 @@ export default function AuthModal() {
 
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [wakingUp, setWakingUp] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
@@ -85,7 +86,11 @@ export default function AuthModal() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setWakingUp(false)
     setError('')
+
+    // After 3s of waiting, show server wake-up hint
+    const wakeTimer = setTimeout(() => setWakingUp(true), 3000)
 
     const validationError = validateForm()
     if (validationError) {
@@ -111,6 +116,8 @@ export default function AuthModal() {
     } catch (err) {
       setError(err.message)
     } finally {
+      clearTimeout(wakeTimer)
+      setWakingUp(false)
       setLoading(false)
     }
   }
@@ -209,6 +216,12 @@ export default function AuthModal() {
                   />
                 </div>
               </>
+            )}
+
+            {wakingUp && (
+              <div className="bg-amber-500/10 border border-amber-500/40 text-amber-300 px-4 py-2 rounded-lg text-xs text-center animate-pulse">
+                ⏳ Server is starting up… this takes ~20s on first load
+              </div>
             )}
 
             <button
