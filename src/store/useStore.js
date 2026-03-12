@@ -175,6 +175,10 @@ export const useStore = create(
         }
 
         try {
+          // First validate token is still valid
+          await authAPI.validateToken(token)
+          
+          // Then fetch full profile
           const profile = await authAPI.getProfile(token)
           set({
             user: profile,
@@ -183,11 +187,21 @@ export const useStore = create(
             authChecked: true,
           })
         } catch (error) {
+          // Token invalid or expired - clear auth
           localStorage.removeItem('token')
           set({ user: null, favorites: [], continueWatching: [], authChecked: true })
         }
       },
-      logout: () => {
+      logout: async () => {
+        const token = localStorage.getItem('token')
+        // Try to logout on server (best effort, don't fail if it doesn't work)
+        if (token) {
+          try {
+            await authAPI.logout(token).catch(() => {})
+          } catch {
+            // Silent fail
+          }
+        }
         localStorage.removeItem('token')
         set({ user: null, favorites: [], continueWatching: [], authChecked: true })
       },

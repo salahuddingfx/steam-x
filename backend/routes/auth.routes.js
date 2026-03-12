@@ -156,6 +156,20 @@ router.put('/change-password', protect, async (req, res) => {
   }
 })
 
+router.post('/logout', protect, (req, res) => {
+  // Token invalidation would happen client-side by removing it from localStorage
+  // This endpoint is here for good practice and future refresh token invalidation
+  res.json({ message: 'Logged out successfully' })
+})
+
+router.post('/validate-token', protect, async (req, res) => {
+  try {
+    res.json({ valid: true, user: req.user })
+  } catch (error) {
+    res.status(401).json({ valid: false, error: 'Invalid token' })
+  }
+})
+
 router.delete('/delete', protect, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.user.id)

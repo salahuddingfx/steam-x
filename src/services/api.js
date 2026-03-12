@@ -102,6 +102,19 @@ export const authAPI = {
       body: JSON.stringify({ currentPassword, newPassword }),
     })
   ),
+
+  logout: async (token) => (
+    requestJSON('/api/auth/logout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  ),
+
+  validateToken: async (token) => (
+    requestJSON('/api/auth/validate-token', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  ),
 }
 
 export const movieAPI = {
