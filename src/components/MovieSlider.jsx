@@ -1,4 +1,5 @@
-import React from 'react'
+﻿import React from 'react'
+import { motion } from 'framer-motion'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import MovieCard from './MovieCard'
 
@@ -16,26 +17,45 @@ export default function MovieSlider({ title, movies }) {
   }
 
   return (
-    <div className="mb-12">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple">
+    <motion.div
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+      className="mb-12"
+    >
+      <motion.div
+        initial={{ x: -20, opacity: 0 }}
+        whileInView={{ x: 0, opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between mb-6"
+      >
+        <motion.h2
+          className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple"
+          whileHover={{ scale: 1.05 }}
+        >
           {title}
-        </h2>
+        </motion.h2>
         <div className="flex gap-2">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.15, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => scroll('left')}
-            className="p-2 hover:bg-dark-card rounded-full transition-all text-neon-blue"
+            className="p-2 rounded-full transition-all text-neon-blue"
           >
             <FiChevronLeft size={24} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.15, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => scroll('right')}
-            className="p-2 hover:bg-dark-card rounded-full transition-all text-neon-blue"
+            className="p-2 rounded-full transition-all text-neon-blue"
           >
             <FiChevronRight size={24} />
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       <div
         ref={sliderRef}
@@ -47,6 +67,6 @@ export default function MovieSlider({ title, movies }) {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
